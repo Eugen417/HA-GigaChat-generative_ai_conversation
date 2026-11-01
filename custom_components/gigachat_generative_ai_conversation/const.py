@@ -73,7 +73,7 @@ DEFAULT_PROMPT = (
 DEFAULT_CHAT_MODEL = "GigaChat-2-Pro"
 DEFAULT_SBER_STUDIO_CHAT_MODEL = "GigaChat-2-Pro"
 DEFAULT_IMAGE_MODEL = "GigaChat-2-Pro"
-DEFAULT_VISION_MODEL = "GigaChat-2-Pro"
+DEFAULT_VISION_MODEL = "Qwen/Qwen3.6-35B-A3B"
 DEFAULT_SBER_VISION_MODEL = "GigaChat-2-Pro"
 DEFAULT_STT_MODEL = "GigaChat/GigaASR"
 DEFAULT_STT_LANGUAGE = "ru-RU"
@@ -97,6 +97,7 @@ CHAT_MODELS = [
     "Qwen/Qwen3.6-35B-A3B",
     "Qwen/Qwen3.5-397B-A17B",
     "moonshotai/Kimi-K2.6",
+    "deepseek-ai/DeepSeek-OCR-2",
     "deepseek-ai/DeepSeek-V4-Pro",
     "zai-org/GLM-5.1",
 ]
@@ -109,6 +110,7 @@ CHAT_MODEL_LABELS: dict[str, str] = {
     "Qwen/Qwen3.6-35B-A3B": "Qwen 3.6 35B Vision [Cloud.ru] (220 / 329 ₽ за 1M — Vision и УД)",
     "Qwen/Qwen3.5-397B-A17B": "Qwen 3.5 397B Vision [Cloud.ru] (анализ камер и УД)",
     "moonshotai/Kimi-K2.6": "Kimi K2.6 Vision [Cloud.ru] (анализ камер и УД)",
+    "deepseek-ai/DeepSeek-OCR-2": "DeepSeek OCR 2 [Cloud.ru] (55 / 61 ₽ за 1M — OCR документов, чеков и счётчиков)",
     "deepseek-ai/DeepSeek-V4-Pro": "DeepSeek V4 Pro [Cloud.ru] (Function Calling + Reasoning)",
     "zai-org/GLM-5.1": "GLM 5.1 [Cloud.ru] (198 / 829 ₽ за 1M)",
     "GigaChat-3-Ultra": "GigaChat 3 Ultra [Sber Studio] (модель для УД)",

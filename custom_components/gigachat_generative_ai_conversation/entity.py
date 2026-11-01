@@ -602,16 +602,19 @@ class GigaChatBaseLLMEntity(Entity):
         openai_tools = (
             [{"type": "function", "function": t} for t in tools] if tools else None
         )
-        cloud_model = model_name if "/" in model_name else DEFAULT_CHAT_MODEL
+        cloud_model = (
+            model_name
+            if ("/" in model_name and "ocr" not in model_name.lower())
+            else "GigaChat/GigaChat-3-Pro"
+        )
         candidates = [cloud_model]
-        if is_recommended:
-            for fb in (
-                "GigaChat/GigaChat-3-Pro",
-                "ai-sage/GigaChat3-10B-A1.8B",
-                "ai-sage/GigaChat3.5-432B-A28B-Reasoning",
-            ):
-                if fb not in candidates:
-                    candidates.append(fb)
+        for fb in (
+            "GigaChat/GigaChat-3-Pro",
+            "ai-sage/GigaChat3-10B-A1.8B",
+            "ai-sage/GigaChat3.5-432B-A28B-Reasoning",
+        ):
+            if fb not in candidates:
+                candidates.append(fb)
 
         headers = {
             "Authorization": f"Bearer {self.cloud_ru_api_key}",
