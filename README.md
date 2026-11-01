@@ -48,6 +48,9 @@
 ## 📦 Установка
 
 ### Вариант 1: Через HACS (Рекомендуется)
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Eugen417&repository=HA-GigaChat-generative_ai_conversation&category=integration)
+
 1. Откройте **HACS** в вашем Home Assistant.
 2. Перейдите в раздел **Интеграции** -> нажмите на меню `⋮` в правом верхнем углу -> **Пользовательские репозитории (Custom repositories)**.
 3. В поле **Репозиторий** укажите:
