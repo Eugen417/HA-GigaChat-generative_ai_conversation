@@ -414,6 +414,28 @@ def _build_openai_messages(
     return messages
 
 
+def _format_structured_output_instruction(
+    structure: Any,
+    custom_serializer: Callable[[Any], Any] | None = None,
+) -> str:
+    """Format a voluptuous structure schema into a JSON Schema prompt instruction."""
+    if structure is None or probatio is None:
+        return ""
+    try:
+        schema = probatio.to_openapi(
+            structure,
+            custom_serializer=custom_serializer or llm.selector_serializer,
+        )
+        norm_schema = _normalize_gigachat_json_schema(schema)
+        return (
+            "\n\nВерни ответ СТРОГО в формате валидного JSON без Markdown-блоков "
+            f"согласно этой JSON Schema:\n{json_dumps(norm_schema)}"
+        )
+    except Exception as err:  # noqa: BLE001
+        _LOGGER.debug("Failed to build structure JSON schema: %s", err)
+        return ""
+
+
 def _estimate_gigachat_cost_rub(
     model_name: str,
     total_tokens: int,
@@ -796,23 +818,14 @@ class GigaChatBaseLLMEntity(Entity):
             ]
 
         structure_instruction: str | None = None
-        if structure is not None and probatio is not None:
-            try:
-                schema = probatio.to_openapi(
+        if structure is not None:
+            structure_instruction = (
+                _format_structured_output_instruction(
                     structure,
-                    custom_serializer=(
-                        chat_log.llm_api.custom_serializer
-                        if chat_log.llm_api
-                        else llm.selector_serializer
-                    ),
+                    chat_log.llm_api.custom_serializer if chat_log.llm_api else None,
                 )
-                norm_schema = _normalize_gigachat_json_schema(schema)
-                structure_instruction = (
-                    "\n\nВерни ответ СТРОГО в формате валидного JSON без Markdown-блоков "
-                    f"согласно этой JSON Schema:\n{json_dumps(norm_schema)}"
-                )
-            except Exception as err:  # noqa: BLE001
-                _LOGGER.debug("Failed to build structure JSON schema: %s", err)
+                or None
+            )
 
         if use_cloud_ru:
             try:
