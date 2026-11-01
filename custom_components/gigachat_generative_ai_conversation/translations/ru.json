@@ -1,0 +1,140 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Служба уже настроена",
+      "reconfigure_successful": "Настройки ключей успешно обновлены"
+    },
+    "error": {
+      "missing_credentials": "Укажите API-ключ Cloud.ru или Ключ авторизации Sber Studio (или оба)."
+    },
+    "step": {
+      "user": {
+        "title": "Подключение Sber GigaChat AI (Cloud.ru + Sber Studio)",
+        "description": "Для работы всех 5 служб рекомендуется заполнить Поле 1 (Cloud.ru — синтез речи SaluteSpeech TTS и модели GigaChat 3 / GigaASR) и Поле 2 (Sber Studio — диалоги LLM, распознавание речи Audio STT, анализ камер Vision и генерация картинок Kandinsky 3.1). Поле 3 оставьте пустым, если у вас нет старого архивного ключа SaluteSpeech.",
+        "data": {
+          "name": "Название",
+          "cloud_ru_api_key": "1. API-ключ Cloud.ru Foundation Models (SaluteSpeech TTS + GigaChat 3 / GigaASR)",
+          "auth_key": "2. Ключ авторизации GigaChat в Sber Studio (рекомендуется: LLM, Audio STT, Vision, Kandinsky 3.1)",
+          "scope": "Версия API GigaChat в Sber Studio (Scope)",
+          "speech_auth_key": "3. Архивный ключ SaluteSpeech в Sber Studio (оставьте пустым при использовании Cloud.ru)",
+          "speech_scope": "Версия API SaluteSpeech в Sber Studio (Scope)",
+          "verify_ssl": "Проверять SSL-сертификат НУЦ Минцифры (для Sber Studio)"
+        }
+      },
+      "reconfigure": {
+        "title": "Обновление ключей Sber GigaChat AI",
+        "description": "Рекомендуется указать Поле 1 (Cloud.ru) и Поле 2 (Sber Studio) одновременно. Поле 3 оставьте пустым, если у вас нет старого отдельного ключа SaluteSpeech.",
+        "data": {
+          "cloud_ru_api_key": "1. API-ключ Cloud.ru Foundation Models (SaluteSpeech TTS + GigaChat 3 / GigaASR)",
+          "auth_key": "2. Ключ авторизации GigaChat в Sber Studio (рекомендуется: LLM, Audio STT, Vision, Kandinsky 3.1)",
+          "scope": "Версия API GigaChat в Sber Studio (Scope)",
+          "speech_auth_key": "3. Архивный ключ SaluteSpeech в Sber Studio (оставьте пустым при использовании Cloud.ru)",
+          "speech_scope": "Версия API SaluteSpeech в Sber Studio (Scope)",
+          "verify_ssl": "Проверять SSL-сертификат НУЦ Минцифры (для Sber Studio)"
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "conversation": {
+      "abort": {
+        "entry_not_loaded": "Невозможно настроить, пока интеграция не загружена."
+      },
+      "entry_type": "Диалоговая система",
+      "initiate_flow": {
+        "reconfigure": "Настроить диалоговую систему",
+        "user": "Добавить диалоговую систему"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Название",
+            "prompt": "Инструкции (системный промпт)",
+            "llm_hass_api": "Управление Home Assistant",
+            "recommended": "Рекомендуемые настройки модели",
+            "chat_model": "Модель GigaChat",
+            "temperature": "Температура",
+            "max_tokens": "Максимальное количество токенов в ответе"
+          }
+        }
+      }
+    },
+    "stt": {
+      "abort": {
+        "entry_not_loaded": "Невозможно настроить, пока интеграция не загружена."
+      },
+      "entry_type": "Распознавание речи (SaluteSpeech)",
+      "initiate_flow": {
+        "reconfigure": "Настроить службу распознавания речи",
+        "user": "Добавить службу распознавания речи"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Название",
+            "stt_model": "Модель распознавания",
+            "stt_language": "Язык по умолчанию"
+          }
+        }
+      }
+    },
+    "tts": {
+      "abort": {
+        "entry_not_loaded": "Невозможно настроить, пока интеграция не загружена."
+      },
+      "entry_type": "Преобразование текста в речь (SaluteSpeech)",
+      "initiate_flow": {
+        "reconfigure": "Настроить службу синтеза речи",
+        "user": "Добавить службу синтеза речи"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Название",
+            "tts_voice": "Голос по умолчанию"
+          }
+        }
+      }
+    },
+    "ai_task_data": {
+      "abort": {
+        "entry_not_loaded": "Невозможно настроить, пока интеграция не загружена."
+      },
+      "entry_type": "Задача ИИ (текст, данные и Vision)",
+      "initiate_flow": {
+        "reconfigure": "Настроить задачу ИИ (текст, данные и Vision)",
+        "user": "Добавить задачу ИИ (текст, данные и Vision)"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Название",
+            "recommended": "Рекомендуемые настройки модели",
+            "chat_model": "Модель для текста и анализа камер (GigaChat)",
+            "temperature": "Температура",
+            "max_tokens": "Максимальное количество токенов в ответе"
+          }
+        }
+      }
+    },
+    "ai_task_image": {
+      "abort": {
+        "entry_not_loaded": "Невозможно настроить, пока интеграция не загружена."
+      },
+      "entry_type": "Задача ИИ (генерация изображений)",
+      "initiate_flow": {
+        "reconfigure": "Настроить задачу генерации изображений",
+        "user": "Добавить задачу ИИ (генерация изображений)"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Название",
+            "recommended": "Рекомендуемые настройки модели",
+            "image_model": "Модель генерации изображений (Kandinsky через GigaChat)"
+          }
+        }
+      }
+    }
+  }
+}

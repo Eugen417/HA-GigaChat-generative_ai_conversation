@@ -1,0 +1,140 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Service is already configured",
+      "reconfigure_successful": "Configuration updated successfully"
+    },
+    "error": {
+      "missing_credentials": "Please provide either a Cloud.ru API Key or a Sber Studio Authorization Key."
+    },
+    "step": {
+      "user": {
+        "title": "Connect Sber GigaChat AI (Cloud.ru + Sber Studio)",
+        "description": "For full support of all 5 services, we recommend providing both Key 1 (Cloud.ru — SaluteSpeech TTS & GigaChat 3 / GigaASR) and Key 2 (Sber Studio — LLM, Audio STT fallback, Vision & Kandinsky 3.1). Leave Key 3 empty unless you have a legacy SaluteSpeech key.",
+        "data": {
+          "name": "Name",
+          "cloud_ru_api_key": "1. Cloud.ru Foundation Models API Key (SaluteSpeech TTS + GigaChat 3 / GigaASR)",
+          "auth_key": "2. Sber Studio GigaChat Authorization Key (recommended: LLM, Audio STT, Vision, Kandinsky 3.1)",
+          "scope": "Sber Studio GigaChat Scope",
+          "speech_auth_key": "3. Legacy Sber Studio SaluteSpeech Key (leave empty when using Cloud.ru)",
+          "speech_scope": "Sber Studio SaluteSpeech Scope",
+          "verify_ssl": "Verify SSL certificate for Sber Studio (Russian Trusted Root CA)"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Sber GigaChat AI Keys",
+        "description": "We recommend providing both Key 1 (Cloud.ru) and Key 2 (Sber Studio). Leave Key 3 empty unless you have a legacy Sber Studio SaluteSpeech key.",
+        "data": {
+          "cloud_ru_api_key": "1. Cloud.ru Foundation Models API Key (SaluteSpeech TTS + GigaChat 3 / GigaASR)",
+          "auth_key": "2. Sber Studio GigaChat Authorization Key (recommended: LLM, Audio STT, Vision, Kandinsky 3.1)",
+          "scope": "Sber Studio GigaChat Scope",
+          "speech_auth_key": "3. Legacy Sber Studio SaluteSpeech Key (leave empty when using Cloud.ru)",
+          "speech_scope": "Sber Studio SaluteSpeech Scope",
+          "verify_ssl": "Verify SSL certificate for Sber Studio (Russian Trusted Root CA)"
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "conversation": {
+      "abort": {
+        "entry_not_loaded": "Cannot configure while entry is not loaded."
+      },
+      "entry_type": "Conversation agent",
+      "initiate_flow": {
+        "reconfigure": "Reconfigure conversation agent",
+        "user": "Add conversation agent"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Name",
+            "prompt": "Instructions",
+            "llm_hass_api": "Control Home Assistant",
+            "recommended": "Recommended model settings",
+            "chat_model": "Model",
+            "temperature": "Temperature",
+            "max_tokens": "Maximum tokens to return in response"
+          }
+        }
+      }
+    },
+    "stt": {
+      "abort": {
+        "entry_not_loaded": "Cannot configure while entry is not loaded."
+      },
+      "entry_type": "Speech-to-text",
+      "initiate_flow": {
+        "reconfigure": "Reconfigure speech-to-text service",
+        "user": "Add speech-to-text service"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Name",
+            "stt_model": "Recognition model",
+            "stt_language": "Default language"
+          }
+        }
+      }
+    },
+    "tts": {
+      "abort": {
+        "entry_not_loaded": "Cannot configure while entry is not loaded."
+      },
+      "entry_type": "Text-to-speech",
+      "initiate_flow": {
+        "reconfigure": "Reconfigure text-to-speech service",
+        "user": "Add text-to-speech service"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Name",
+            "tts_voice": "Default voice"
+          }
+        }
+      }
+    },
+    "ai_task_data": {
+      "abort": {
+        "entry_not_loaded": "Cannot configure while entry is not loaded."
+      },
+      "entry_type": "AI task (text, data & Vision)",
+      "initiate_flow": {
+        "reconfigure": "Reconfigure AI task",
+        "user": "Add AI task (text, data & Vision)"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended model settings",
+            "chat_model": "Text/Vision Model",
+            "temperature": "Temperature",
+            "max_tokens": "Maximum tokens to return in response"
+          }
+        }
+      }
+    },
+    "ai_task_image": {
+      "abort": {
+        "entry_not_loaded": "Cannot configure while entry is not loaded."
+      },
+      "entry_type": "AI task (image generation)",
+      "initiate_flow": {
+        "reconfigure": "Reconfigure image generation task",
+        "user": "Add AI task (image generation)"
+      },
+      "step": {
+        "set_options": {
+          "data": {
+            "name": "Name",
+            "recommended": "Recommended model settings",
+            "image_model": "Image Generation Model (Kandinsky via GigaChat)"
+          }
+        }
+      }
+    }
+  }
+}
