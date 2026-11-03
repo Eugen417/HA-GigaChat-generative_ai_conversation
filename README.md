@@ -11,7 +11,7 @@
   <a href="https://www.home-assistant.io/"><img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2025.7%2B%20%7C%202026.x-blue.svg" /></a>
 </p>
 
-Полнофункциональная интеграция **Sber GigaChat AI (GigaChat 2 / 3 / 3.5, Kandinsky 3.1 и SaluteSpeech)** для **Home Assistant**, построенная по современной сервисной архитектуре `ConfigSubentry` и `ChatLog` (аналогично официальным интеграциям **Google Gemini**, **Ollama** и пользовательской [**Yandex AI Studio**](https://github.com/Eugen417/HA-Yandex-generative_ai_conversation) в Home Assistant 2026).
+Полнофункциональная интеграция **Sber GigaChat AI (GigaChat 2 / 3 / 3.5, Kandinsky 3.1 и SaluteSpeech)** для **Home Assistant**, построенная по современной сервисной архитектуре `ConfigSubentry` и `ChatLog` (аналогично официальным интеграциям **Google Gemini**, **Ollama** и пользовательской [HA-Yandex-generative_ai_conversation](https://github.com/Eugen417/HA-Yandex-generative_ai_conversation) в Home Assistant 2026).
 
 Интеграция поддерживает **гибридную работу сразу с двумя платформами Сбера** — **[Cloud.ru Evolution Foundation Models](https://cloud.ru/products/evolution-ai-factory/catalog-foundation-models)** и **[Sber Studio (`developers.sber.ru/studio`)](https://developers.sber.ru/studio)** — и объединяет в одном подключении **5 независимых ИИ-служб** для голосового ассистента **Assist** и автоматизаций умного дома:
 
@@ -41,7 +41,8 @@
 * 🖼 **Разделённые службы AI Task + Vision-анализ камер:**
   * **`GigaChat AI Task`** — генерация текста/JSON-данных (`ai_task.generate_data`) и **анализ снимков с камер (`SUPPORT_ATTACHMENTS`)** через мультимодальный API GigaChat (`/api/v1/files` + `attachments`) или Vision-модели Cloud.ru.
   * **`GigaChat AI Task image`** — генерация картинок (`ai_task.generate_image`) через встроенную в GigaChat модель **Kandinsky 3.1 (`text2image`)**.
-* 📊 **Учёт токенов и расчётных затрат (`sensor.py`, валюта `RUB`):** Для каждой из 5 служб автоматически создаются диагностические сенсоры использования (токены, изображения, символы TTS, запросы STT) и расчётной стоимости в рублях (`RUB`) с сохранением состояния после перезагрузки Home Assistant (`RestoreSensor`).
+* 📊 **Учёт токенов и расчётных затрат (`sensor.py`, валюта `RUB`):** Для каждой из 5 служб автоматически создаются диагностические сенсоры использования (токены, изображения, символы TTS, запросы STT) и ориентировочной стоимости в рублях (`RUB`) с сохранением состояния после перезагрузки Home Assistant (`RestoreSensor`).
+  > ℹ️ **Обратите внимание:** сенсоры **`Затраты (RUB)`** показывают **примерный (ориентировочный) расчётный показатель** по базовым тарифам моделей и **не учитывают ряд факторов**: наличие бесплатных квот **Freemium в Sber Studio (365 млн токенов на год)**, стартового гранта **4 000 бонусов в Cloud.ru**, кэшированных токенов промпта (`precached_prompt_tokens`), округления длительности аудио в STT и индивидуальных корпоративных условий. Пока действуют ваши бесплатные квоты Freemium или бонусный грант, фактическое списание средств составляет **0 ₽**.
 
 ---
 
@@ -114,6 +115,23 @@
 В настройках ⚙️ службы **`GigaChat Conversation`** (или **`GigaChat AI Task`**) снимите галочку **«Рекомендуемые настройки модели»** — появится список выбора модели:
 - Модели **`[Sber Studio]`** (`GigaChat-2-Pro`, `GigaChat-3-Ultra`, `GigaChat-2-Max`, `GigaChat-2`) — работают через ключ `developers.sber.ru/studio` (Поле 2).
 - Модели **`[Cloud.ru]`** (`GigaChat/GigaChat-3-Pro`, `ai-sage/GigaChat3.5-432B-A28B-Reasoning`, `ai-sage/GigaChat3-10B-A1.8B`, `Qwen/Qwen3.6-35B-A3B`) — работают через ключ **Cloud.ru Evolution** (Поле 1; при необходимости интеграция автоматически резервирует запрос через Поле 2).
+
+### 💰 Тарифы Sber Studio для физлиц и особенности расчёта счётчиков затрат
+
+Согласно [официальным тарифам GigaChat API для физлиц](https://developers.sber.ru/docs/ru/gigachat/tariffs/individual-tariffs), при использовании ключа **Sber Studio (Поле 2, `GIGACHAT_API_PERS`)** пользователям доступны **365 000 000 бесплатных токенов (Freemium на 12 месяцев)**, а также обновлённые пакетные тарифы:
+
+| Линейка моделей Sber Studio | ID модели в запросе | Бесплатный лимит (`Freemium`, 12 мес.) | Платный пакет (при исчерпании Freemium) | Расчётная цена за 1K токенов в сенсоре |
+| :--- | :--- | :---: | :---: | :---: |
+| **GigaChat 2 Lite** | `GigaChat-2`, `GigaChat` | **250 000 000** токенов | 20 000 000 токенов за 1 300 ₽ | **0.065 ₽ / 1K** |
+| **GigaChat 2 Pro** | `GigaChat-2-Pro`, `GigaChat-Pro` | **40 000 000** токенов | 3 000 000 токенов за 1 500 ₽ | **0.50 ₽ / 1K** |
+| **GigaChat 2 Max** | `GigaChat-2-Max`, `GigaChat-Max` | **25 000 000** токенов | 3 000 000 токенов за 1 950 ₽ | **0.65 ₽ / 1K** |
+| **GigaChat 3 Ultra** | `GigaChat-3-Ultra` | **50 000 000** токенов | Только Freemium | **0.00 ₽ / 1K** |
+
+> ⚠️ **Важно о работе диагностических сенсоров `Затраты (RUB)`:**
+> Счётчики расходов в Home Assistant являются **примерным справочным показателем** (оценкой стоимости потреблённых ресурсов по прейскуранту платных пакетов Sber Studio и pay-as-you-go тарифам Cloud.ru) и **не учитывают ряд факторов**:
+> 1. **Бесплатные пакеты Freemium (365 млн токенов) и стартовые бонусы Cloud.ru (4 000 бонусов)** — интеграция не запрашивает остаток бесплатных пакетов из биллинга Сбера и считает условную стоимость каждого запроса так, как если бы он тарифицировался по платному пакету.
+> 2. **Кэширование системного промпта (`precached_prompt_tokens`)** и пакетное списание/сгорание остатка токенов по итогам месяца.
+> 3. **Посекундное округление аудио в STT** и индивидуальные тарифы для юрлиц (`B2B` / `CORP`).
 
 <p align="center">
   <img width="280" alt="Настройки диалогового агента GigaChat Conversation" src="images/conversation_settings.png" />

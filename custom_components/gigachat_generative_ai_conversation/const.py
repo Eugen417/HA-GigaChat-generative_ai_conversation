@@ -113,13 +113,13 @@ CHAT_MODEL_LABELS: dict[str, str] = {
     "deepseek-ai/DeepSeek-OCR-2": "DeepSeek OCR 2 [Cloud.ru] (55 / 61 ₽ за 1M — OCR документов, чеков и счётчиков)",
     "deepseek-ai/DeepSeek-V4-Pro": "DeepSeek V4 Pro [Cloud.ru] (Function Calling + Reasoning)",
     "zai-org/GLM-5.1": "GLM 5.1 [Cloud.ru] (198 / 829 ₽ за 1M)",
-    "GigaChat-3-Ultra": "GigaChat 3 Ultra [Sber Studio] (модель для УД)",
-    "GigaChat-2-Pro": "GigaChat 2 Pro [Sber Studio] (1.50 ₽ / 1K — УД и Vision)",
-    "GigaChat-2-Max": "GigaChat 2 Max [Sber Studio] (1.95 ₽ / 1K — макс. точность и Vision)",
-    "GigaChat-2": "GigaChat 2 Lite [Sber Studio] (0.19 ₽ / 1K)",
-    "GigaChat-Pro": "GigaChat Pro [Sber Studio] (1.50 ₽ / 1K)",
-    "GigaChat-Max": "GigaChat Max [Sber Studio] (1.95 ₽ / 1K)",
-    "GigaChat": "GigaChat Lite [Sber Studio] (0.19 ₽ / 1K)",
+    "GigaChat-3-Ultra": "GigaChat 3 Ultra [Sber Studio] (Freemium 50M — модель для УД)",
+    "GigaChat-2-Pro": "GigaChat 2 Pro [Sber Studio] (0.50 ₽ / 1K, Freemium 40M — УД и Vision)",
+    "GigaChat-2-Max": "GigaChat 2 Max [Sber Studio] (0.65 ₽ / 1K, Freemium 25M — макс. точность и Vision)",
+    "GigaChat-2": "GigaChat 2 Lite [Sber Studio] (0.065 ₽ / 1K, Freemium 250M)",
+    "GigaChat-Pro": "GigaChat Pro [Sber Studio] (0.50 ₽ / 1K, Freemium 40M)",
+    "GigaChat-Max": "GigaChat Max [Sber Studio] (0.65 ₽ / 1K, Freemium 25M)",
+    "GigaChat": "GigaChat Lite [Sber Studio] (0.065 ₽ / 1K, Freemium 250M)",
 }
 
 IMAGE_MODELS = [

@@ -14,8 +14,9 @@
      - **Vision (анализ камер)**: `Qwen/Qwen3.6-35B-A3B`, `Qwen/Qwen3.5-397B-A17B`, `moonshotai/Kimi-K2.6`.
 
 2. 🧩 **Поле 2 (Опциональный ключ #1 — рекомендуется указывать в паре с Полем 1) — Ключ авторизации GigaChat в Sber Studio (`Authorization Key`)**
+   - Открывает доступ к **Freemium-режиму для физлиц (365 000 000 бесплатных токенов на 12 месяцев)**: 250M на `GigaChat-2` (Lite), 50M на `GigaChat-3-Ultra`, 40M на `GigaChat-2-Pro` и 25M на `GigaChat-2-Max` (по [официальным тарифам для физлиц](https://developers.sber.ru/docs/ru/gigachat/tariffs/individual-tariffs)).
    - Обеспечивает работу сервисов Sber Studio и служит автоматическим резервом (фоллбэком), если на балансе Cloud.ru недостаточно средств (`402`):
-     - 💬 **Диалоги и управление умным домом (`GigaChat Conversation`)** на моделях `GigaChat-2-Pro`, `GigaChat-3-Ultra`, `GigaChat-2-Max`, `GigaChat-2`;
+     - 💬 **Диалоги и управление умным домом (`GigaChat Conversation`)** на моделях `GigaChat-2-Pro` (0.50 ₽ / 1K вне Freemium), `GigaChat-3-Ultra` (Freemium 50M), `GigaChat-2-Max` (0.65 ₽ / 1K), `GigaChat-2` (0.065 ₽ / 1K);
      - 🎙 **Распознавание речи (`GigaChat Audio STT`)** — автоматический фоллбэк через мультимодальную загрузку аудио (`POST /api/v1/files` + `GigaChat-2-Pro`);
      - 👁 **Vision-анализ камер (`GigaChat AI Task`)** через `/api/v1/files`;
      - 🎨 **Генерацию изображений Kandinsky 3.1 (`GigaChat AI Task image`)** (`text2image` доступен только в Sber Studio).

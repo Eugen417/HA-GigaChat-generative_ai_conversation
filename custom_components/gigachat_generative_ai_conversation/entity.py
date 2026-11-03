@@ -459,12 +459,14 @@ def _estimate_gigachat_cost_rub(
             return (in_tok * 219.6 + out_tok * 329.4) / 1_000_000.0
         return total_tokens * 100.0 / 1_000_000.0
 
-    if "max" in m_lower:
-        rate_per_1k = 1.95
+    if "ultra" in m_lower:
+        rate_per_1k = 0.0
+    elif "max" in m_lower:
+        rate_per_1k = 0.65
     elif "pro" in m_lower:
-        rate_per_1k = 1.50
+        rate_per_1k = 0.50
     else:
-        rate_per_1k = 0.19
+        rate_per_1k = 0.065
     return total_tokens * rate_per_1k / 1000.0
 
 
