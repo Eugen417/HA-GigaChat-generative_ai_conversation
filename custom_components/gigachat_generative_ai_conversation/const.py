@@ -73,7 +73,7 @@ DEFAULT_PROMPT = (
 
 DEFAULT_CHAT_MODEL = "GigaChat-2-Pro"
 DEFAULT_SBER_STUDIO_CHAT_MODEL = "GigaChat-2-Pro"
-DEFAULT_IMAGE_MODEL = "GigaChat-2-Pro"
+DEFAULT_IMAGE_MODEL = "GigaChat-2"
 DEFAULT_VISION_MODEL = "Qwen/Qwen3.6-35B-A3B"
 DEFAULT_SBER_VISION_MODEL = "GigaChat-2-Pro"
 DEFAULT_STT_MODEL = "GigaChat/GigaASR"
@@ -125,17 +125,17 @@ CHAT_MODEL_LABELS: dict[str, str] = {
 }
 
 IMAGE_MODELS = [
+    "GigaChat-2",
     "GigaChat-2-Pro",
     "GigaChat-2-Max",
-    "GigaChat-2",
     "GigaChat",
 ]
 
 IMAGE_MODEL_LABELS: dict[str, str] = {
-    "GigaChat-2-Pro": "Kandinsky 3.1 через GigaChat 2 Pro [Sber Studio]",
-    "GigaChat-2-Max": "Kandinsky 3.1 через GigaChat 2 Max [Sber Studio]",
-    "GigaChat-2": "Kandinsky 3.1 через GigaChat 2 Lite [Sber Studio]",
-    "GigaChat": "Kandinsky 3.1 через GigaChat Lite [Sber Studio]",
+    "GigaChat-2": "Kandinsky 3.1 через GigaChat 2 Lite [Sber Studio] (0.065 ₽ / 1K, Freemium 250M — рекомендуется)",
+    "GigaChat-2-Pro": "Kandinsky 3.1 через GigaChat 2 Pro [Sber Studio] (0.50 ₽ / 1K, Freemium 40M)",
+    "GigaChat-2-Max": "Kandinsky 3.1 через GigaChat 2 Max [Sber Studio] (0.65 ₽ / 1K, Freemium 25M)",
+    "GigaChat": "Kandinsky 3.1 через GigaChat Lite [Sber Studio] (0.065 ₽ / 1K, Freemium 250M)",
 }
 
 STT_MODELS = [

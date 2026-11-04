@@ -364,7 +364,12 @@ class SaluteSpeechSTTEntity(SpeechToTextEntity, GigaChatBaseLLMEntity):
                         return ""
 
                 recognized = ""
-                for candidate in ("GigaChat-2-Pro", "GigaChat-2-Max", "GigaChat-2", "GigaChat"):
+                for candidate in (
+                    "GigaChat-2",
+                    "GigaChat-2-Pro",
+                    "GigaChat-2-Max",
+                    "GigaChat",
+                ):
                     payload = {
                         "model": candidate,
                         "messages": [
