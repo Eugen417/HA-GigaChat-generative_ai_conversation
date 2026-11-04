@@ -2,6 +2,15 @@
 
 Все значимые изменения проекта документируются в этом файле.
 
+## [1.2.9] - 2026-11-04
+
+### Добавлено и исправлено
+- **Добавлены все 9 официальных голосов `GigaChat/SaluteSpeech` в Cloud.ru и обновлён протокол WebSocket `/v1/realtime` (`tts.py`, `const.py`)**:
+  - Подключены все 9 голосов модели `GigaChat/SaluteSpeech` (`Bab-Freespeech`, `Bab-Energetic`, `Bab-Debate`, `Mer-Operator`, `Kaz-Lifelike`, `Tsb-Freespeech`, `Tsb-Hesitating`, `Gli-Freespeech`, `Gli-Operator`) с передачей голоса через `response.audio.output.voice` и текста через `response.input` (`input_text`).
+- **Скрытие моделей и голосов для неактивированных ключей (`config_flow.py`, `tts.py`)**:
+  - Если не заполнен архивный ключ SaluteSpeech (Поле 3), в настройках `TTS` и `STT` не отображаются модели и голоса `smartspeech.sber.ru` (`SaluteSpeech Classic`, `general`, `callcenter`).
+  - В настройках `Conversation` и `AI Task` отображаются только модели тех платформ (`[Cloud.ru]` и/или `[Sber Studio]`), для которых реально введены ключи.
+
 ## [1.2.8] - 2026-11-04
 
 ### Изменено и исправлено

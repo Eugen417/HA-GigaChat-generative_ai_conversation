@@ -151,14 +151,22 @@ TTS_MODELS = [
 ]
 
 TTS_MODEL_LABELS: dict[str, str] = {
-    "GigaChat/SaluteSpeech": "GigaChat/SaluteSpeech [Cloud.ru] (Realtime Preview — голос Bab-Freespeech, 24 кГц)",
+    "GigaChat/SaluteSpeech": "GigaChat/SaluteSpeech [Cloud.ru] (9 голосов: Mer, Kaz, Tsb, Gli, Bab — 24 кГц)",
     "SaluteSpeech": "SaluteSpeech Classic [Sber Studio] (Наталья, Борис, Марфа, Тарас, Александра, Сергей)",
 }
 
 TTS_VOICES_BY_MODEL: dict[str, dict[str, list[tuple[str, str]]]] = {
     "GigaChat/SaluteSpeech": {
         "ru-RU": [
-            ("Bab-Freespeech", "Варвара / Bab-Freespeech (24 кГц)"),
+            ("Bab-Freespeech", "Bab-Freespeech (Свободная речь)"),
+            ("Bab-Energetic", "Bab-Energetic (Энергичный)"),
+            ("Bab-Debate", "Bab-Debate (Дискуссионный)"),
+            ("Mer-Operator", "Mer-Operator (Оператор)"),
+            ("Kaz-Lifelike", "Kaz-Lifelike (Естественный)"),
+            ("Tsb-Freespeech", "Tsb-Freespeech (Свободная речь)"),
+            ("Tsb-Hesitating", "Tsb-Hesitating (Размышляющий)"),
+            ("Gli-Freespeech", "Gli-Freespeech (Свободная речь)"),
+            ("Gli-Operator", "Gli-Operator (Оператор)"),
         ],
     },
     "SaluteSpeech": {

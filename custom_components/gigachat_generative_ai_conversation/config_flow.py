@@ -332,7 +332,11 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
                 )
                 options = {**base_opts, **user_input}
                 schema = _gigachat_config_option_schema(
-                    self.hass, self._is_new, self._subentry_type, options
+                    self.hass,
+                    self._is_new,
+                    self._subentry_type,
+                    options,
+                    self._get_entry().data,
                 )
                 return self.async_show_form(
                     step_id="set_options",
@@ -368,7 +372,11 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
             return result
 
         schema = _gigachat_config_option_schema(
-            self.hass, self._is_new, self._subentry_type, options
+            self.hass,
+            self._is_new,
+            self._subentry_type,
+            options,
+            self._get_entry().data,
         )
         return self.async_show_form(
             step_id="set_options",
@@ -384,8 +392,14 @@ def _gigachat_config_option_schema(
     is_new: bool,
     subentry_type: str,
     options: Mapping[str, Any],
+    entry_data: Mapping[str, Any] | None = None,
 ) -> dict[Any, Any]:
-    """Return a schema for Sber GigaChat AI subentry options."""
+    """Return a schema for Sber GigaChat AI subentry options filtered by active API keys."""
+    edata = entry_data or {}
+    has_cloud_ru = bool(str(edata.get(CONF_CLOUD_RU_API_KEY, "")).strip())
+    has_sber_studio = bool(str(edata.get(CONF_AUTH_KEY, "")).strip())
+    has_speech_key = bool(str(edata.get(CONF_SPEECH_AUTH_KEY, "")).strip())
+
     if is_new:
         if subentry_type == "tts":
             default_name = DEFAULT_TTS_NAME
@@ -403,9 +417,16 @@ def _gigachat_config_option_schema(
     else:
         schema = {}
 
+    available_chat_models = [
+        m
+        for m in CHAT_MODELS
+        if ("/" in m and has_cloud_ru)
+        or ("/" not in m and has_sber_studio)
+        or (not has_cloud_ru and not has_sber_studio)
+    ]
     chat_model_choices = [
         SelectOptionDict(label=CHAT_MODEL_LABELS.get(m, m), value=m)
-        for m in CHAT_MODELS
+        for m in available_chat_models
     ]
     image_model_choices = [
         SelectOptionDict(label=IMAGE_MODEL_LABELS.get(m, m), value=m)
@@ -480,15 +501,30 @@ def _gigachat_config_option_schema(
             )
 
     elif subentry_type == "stt":
-        stt_model_choices = [SelectOptionDict(label=m, value=m) for m in STT_MODELS]
+        available_stt_models = [
+            m
+            for m in STT_MODELS
+            if ("/" in m and has_cloud_ru)
+            or ("/" not in m and has_speech_key)
+        ]
+        if has_sber_studio and "GigaChat-Audio" not in available_stt_models:
+            available_stt_models.append("GigaChat-Audio")
+        if not available_stt_models:
+            available_stt_models = list(STT_MODELS)
+        stt_model_choices = [
+            SelectOptionDict(label=m, value=m) for m in available_stt_models
+        ]
         stt_lang_choices = [
             SelectOptionDict(label=lang, value=lang) for lang in STT_LANGUAGES
         ]
+        default_stt = options.get(CONF_STT_MODEL, available_stt_models[0])
+        if default_stt not in available_stt_models:
+            default_stt = available_stt_models[0]
         schema.update(
             {
                 vol.Optional(
                     CONF_STT_MODEL,
-                    default=options.get(CONF_STT_MODEL, DEFAULT_STT_MODEL),
+                    default=default_stt,
                 ): SelectSelector(
                     SelectSelectorConfig(
                         options=stt_model_choices,
@@ -508,15 +544,26 @@ def _gigachat_config_option_schema(
             }
         )
     elif subentry_type == "tts":
+        available_tts_models: list[str] = []
+        if has_cloud_ru:
+            available_tts_models.append("GigaChat/SaluteSpeech")
+        if has_speech_key:
+            available_tts_models.append("SaluteSpeech")
+        if not available_tts_models:
+            available_tts_models = list(TTS_MODELS)
+
         tts_model_choices = [
             SelectOptionDict(label=TTS_MODEL_LABELS.get(m, m), value=m)
-            for m in TTS_MODELS
+            for m in available_tts_models
         ]
+        default_tts = options.get(CONF_TTS_MODEL, available_tts_models[0])
+        if default_tts not in available_tts_models:
+            default_tts = available_tts_models[0]
         schema.update(
             {
                 vol.Optional(
                     CONF_TTS_MODEL,
-                    default=options.get(CONF_TTS_MODEL, DEFAULT_TTS_MODEL),
+                    default=default_tts,
                 ): SelectSelector(
                     SelectSelectorConfig(
                         options=tts_model_choices,

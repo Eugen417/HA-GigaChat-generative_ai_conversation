@@ -59,12 +59,14 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
         self._unsupported_cloud_voices: set[str] = set()
 
     def _active_tts_model(self) -> str:
-        """Return the active TTS model ('GigaChat/SaluteSpeech' or 'SaluteSpeech')."""
+        """Return the active TTS model filtered by configured API keys."""
+        if not self.has_separate_speech_key and self.cloud_ru_api_key:
+            return "GigaChat/SaluteSpeech"
+        if self.has_separate_speech_key and not self.cloud_ru_api_key:
+            return "SaluteSpeech"
         configured = self.subentry.data.get(CONF_TTS_MODEL)
         if configured in TTS_VOICES_BY_MODEL:
             return str(configured)
-        if self.has_separate_speech_key and not self.cloud_ru_api_key:
-            return "SaluteSpeech"
         return DEFAULT_TTS_MODEL
 
     @property
@@ -139,7 +141,7 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
                         {
                             "chars": chars,
                             "cost_rub": chars * 0.41 / 1000.0,
-                            "model": "GigaChat/SaluteSpeech (Bab-Freespeech)",
+                            "model": f"GigaChat/SaluteSpeech ({voice})",
                         },
                     )
                 return ("wav", audio_wav)
@@ -197,24 +199,21 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
         self, message: str, voice: str
     ) -> bytes | None:
         """Synthesize speech using Cloud.ru /v1/realtime WebSocket (`GigaChat/SaluteSpeech`)."""
-        ws_url = "wss://foundation-models.api.cloud.ru/v1/realtime?model=GigaChat/SaluteSpeech"
+        ws_url = "wss://foundation-models.api.cloud.ru/v1/realtime"
         headers = {
             "Authorization": f"Bearer {self.cloud_ru_api_key}",
-            "OpenAI-Beta": "realtime=v1",
         }
         sample_rate = 24000
-        # Map classic SaluteSpeech voice codes (e.g. Bys_24000) to Cloud.ru gigatts format (Bys-Freespeech)
-        prefix = voice.split("_")[0].split("-")[0] if voice else "Bab"
-        freespeech_voice = (
-            voice if "Freespeech" in voice else f"{prefix}-Freespeech"
+        valid_cloud_voices = {
+            v_id
+            for v_id, _ in TTS_VOICES_BY_MODEL["GigaChat/SaluteSpeech"]["ru-RU"]
+        }
+        selected_voice = voice if voice in valid_cloud_voices else "Bab-Freespeech"
+        candidates = (
+            [selected_voice, "Bab-Freespeech"]
+            if selected_voice != "Bab-Freespeech"
+            else ["Bab-Freespeech"]
         )
-        candidates: list[str | None] = []
-        if (
-            freespeech_voice != "Bab-Freespeech"
-            and freespeech_voice not in self._unsupported_cloud_voices
-        ):
-            candidates.append(freespeech_voice)
-        candidates.append(None)
 
         for voice_candidate in candidates:
             audio_chunks: list[bytes] = []
@@ -225,48 +224,38 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
                     session.ws_connect(
                         ws_url,
                         headers=headers,
-                        timeout=25.0,
+                        timeout=30.0,
                     ) as ws,
                 ):
-                    if voice_candidate:
-                        await ws.send_json(
-                            {
-                                "type": "session.update",
-                                "session": {
-                                    "voice": voice_candidate,
-                                    "output_audio_format": "pcm16",
-                                    "modalities": ["audio", "text"],
-                                    "gigatts": {
-                                        "voice": voice_candidate,
-                                        "lang": "auto",
-                                        "content_type": "text",
-                                    },
-                                },
-                            }
-                        )
-
-                    await ws.send_json(
-                        {
-                            "type": "conversation.item.create",
-                            "item": {
-                                "type": "message",
-                                "role": "assistant",
-                                "content": [{"type": "text", "text": message}],
-                            },
-                        }
-                    )
-
-                    resp_cfg: dict[str, Any] = {
-                        "modalities": ["audio", "text"],
-                        "instructions": message,
-                    }
-                    if voice_candidate:
-                        resp_cfg["voice"] = voice_candidate
-
                     await ws.send_json(
                         {
                             "type": "response.create",
-                            "response": resp_cfg,
+                            "model": "GigaChat/SaluteSpeech",
+                            "response": {
+                                "output_modalities": ["audio"],
+                                "audio": {
+                                    "output": {
+                                        "format": {
+                                            "type": "audio/pcm",
+                                            "rate": sample_rate,
+                                        },
+                                        "voice": voice_candidate,
+                                        "speed": 1.0,
+                                    }
+                                },
+                                "input": [
+                                    {
+                                        "type": "message",
+                                        "role": "user",
+                                        "content": [
+                                            {
+                                                "type": "input_text",
+                                                "text": message,
+                                            }
+                                        ],
+                                    }
+                                ],
+                            },
                         }
                     )
 
