@@ -2,6 +2,14 @@
 
 Все значимые изменения проекта документируются в этом файле.
 
+## [1.2.6] - 2026-11-04
+
+### Исправлено и проверено
+- Проверены все модели каталогов **Cloud.ru Foundation Models** и **Sber Studio** (`GigaChat/GigaChat-3-Pro`, `ai-sage/GigaChat3.5-432B-A28B-Reasoning`, `ai-sage/GigaChat3-10B-A1.8B`, `Qwen/Qwen3.6-35B-A3B`, `Qwen/Qwen3.5-397B-A17B`, `moonshotai/Kimi-K2.6`, `deepseek-ai/DeepSeek-OCR-2`, `deepseek-ai/DeepSeek-V4-Pro`, `zai-org/GLM-5.1`, `MiniMaxAI/MiniMax-M3`, `GigaChat-3-Ultra`, `GigaChat-2-Max`, `GigaChat-2-Pro`, `GigaChat-2`):
+  - Добавлено свойство `self.model` в `GigaChatBaseLLMEntity` для корректного определения выбранной модели в `GigaChat AI Task` при анализе вложений и камер.
+  - Расширен автоматический фоллбэк с любой модели `[Cloud.ru]` на `Sber Studio` при наличии обоих ключей.
+  - Уточнены коэффициенты расчёта стоимости (`_estimate_gigachat_cost_rub`) для всех моделей Cloud.ru.
+
 ## [1.2.5] - 2026-11-04
 
 ### Исправлено

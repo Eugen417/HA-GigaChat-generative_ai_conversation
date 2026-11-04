@@ -465,6 +465,18 @@ def _estimate_gigachat_cost_rub(
             return total_tokens * 569.34 / 1_000_000.0
         if "qwen3.6-35b" in m_lower:
             return (in_tok * 219.6 + out_tok * 329.4) / 1_000_000.0
+        if "qwen3.5-397b" in m_lower:
+            return (in_tok * 915.0 + out_tok * 1085.8) / 1_000_000.0
+        if "kimi-k2.6" in m_lower:
+            return (in_tok * 175.68 + out_tok * 725.9) / 1_000_000.0
+        if "deepseek-ocr-2" in m_lower:
+            return (in_tok * 54.9 + out_tok * 61.0) / 1_000_000.0
+        if "deepseek-v4-pro" in m_lower:
+            return (in_tok * 183.0 + out_tok * 732.0) / 1_000_000.0
+        if "glm-5.1" in m_lower:
+            return (in_tok * 198.86 + out_tok * 829.6) / 1_000_000.0
+        if "minimax-m3" in m_lower:
+            return (in_tok * 240.22 + out_tok * 1008.85) / 1_000_000.0
         return total_tokens * 100.0 / 1_000_000.0
 
     if "ultra" in m_lower:
@@ -540,6 +552,21 @@ class GigaChatBaseLLMEntity(Entity):
     def subentry(self) -> ConfigSubentry:
         """Return the latest subentry from the config entry."""
         return self.entry.subentries.get(self._subentry_id, self._subentry)
+
+    @property
+    def model(self) -> str:
+        """Return the currently configured model for this subentry."""
+        data = self.subentry.data
+        if data.get(CONF_RECOMMENDED):
+            return self.default_model
+        raw = str(
+            data.get(CONF_CHAT_MODEL)
+            or data.get(CONF_IMAGE_MODEL)
+            or data.get(CONF_STT_MODEL)
+            or data.get(CONF_TTS_VOICE)
+            or self.default_model
+        )
+        return _LEGACY_MODEL_MAP.get(raw, raw)
 
     async def async_get_access_token(
         self, is_speech: bool = False, force_refresh: bool = False
@@ -853,27 +880,29 @@ class GigaChatBaseLLMEntity(Entity):
             except HomeAssistantError as err:
                 if "402" in str(err) or "Not enough money" in str(err):
                     self._cloud_ru_exhausted = True
-                    if self.auth_key:
-                        _LOGGER.warning(
-                            "Cloud.ru balance is 0 RUB (402 Not enough money); "
-                            "automatically falling back to Sber Studio Freemium key"
-                        )
-                        if chat_log.llm_api:
-                            tools = [
-                                _format_tool(
-                                    tool,
-                                    chat_log.llm_api.custom_serializer,
-                                    include_examples=True,
-                                )
-                                for tool in chat_log.llm_api.tools
-                                if "GetDateTime" not in tool.name
-                            ]
-                    else:
-                        raise HomeAssistantError(
-                            "Недостаточно средств на балансе Cloud.ru (402 Not enough money). "
-                            "Пополните баланс в консоли Cloud.ru "
-                            "или добавьте Ключ авторизации Sber Studio в настройках интеграции."
-                        ) from err
+                if self.auth_key:
+                    _LOGGER.warning(
+                        "Cloud.ru request for model %s failed (%s); "
+                        "automatically falling back to Sber Studio key",
+                        model_name,
+                        err,
+                    )
+                    if chat_log.llm_api:
+                        tools = [
+                            _format_tool(
+                                tool,
+                                chat_log.llm_api.custom_serializer,
+                                include_examples=True,
+                            )
+                            for tool in chat_log.llm_api.tools
+                            if "GetDateTime" not in tool.name
+                        ]
+                elif "402" in str(err) or "Not enough money" in str(err):
+                    raise HomeAssistantError(
+                        "Недостаточно средств на балансе Cloud.ru (402 Not enough money). "
+                        "Пополните баланс в консоли Cloud.ru "
+                        "или добавьте Ключ авторизации Sber Studio в настройках интеграции."
+                    ) from err
                 else:
                     raise
 
