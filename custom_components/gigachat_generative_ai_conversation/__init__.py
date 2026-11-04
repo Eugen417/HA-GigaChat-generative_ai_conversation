@@ -20,6 +20,7 @@ from .const import (
     CONF_PROMPT,
     CONF_STT_MODEL,
     CONF_TEMPERATURE,
+    CONF_TTS_MODEL,
     CONF_TTS_VOICE,
     DEFAULT_AI_TASK_IMAGE_NAME,
     DEFAULT_AI_TASK_NAME,
@@ -29,6 +30,7 @@ from .const import (
     DEFAULT_PROMPT,
     DEFAULT_STT_MODEL,
     DEFAULT_STT_NAME,
+    DEFAULT_TTS_MODEL,
     DEFAULT_TTS_NAME,
     DEFAULT_TTS_VOICE,
     DOMAIN,
@@ -119,7 +121,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     )
 
         if "tts" not in existing_types:
+            default_tts_model = (
+                "SaluteSpeech"
+                if (
+                    entry.data.get("speech_auth_key")
+                    and not entry.data.get("cloud_ru_api_key")
+                )
+                else DEFAULT_TTS_MODEL
+            )
             tts_opts = {
+                CONF_TTS_MODEL: entry.options.get(CONF_TTS_MODEL, default_tts_model),
                 CONF_TTS_VOICE: entry.options.get(CONF_TTS_VOICE, DEFAULT_TTS_VOICE),
             }
             hass.config_entries.async_add_subentry(
@@ -131,6 +142,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     unique_id=None,
                 ),
             )
+        else:
+            for sub in list(entry.subentries.values()):
+                if sub.subentry_type == "tts" and CONF_TTS_MODEL not in sub.data:
+                    default_tts_model = (
+                        "SaluteSpeech"
+                        if (
+                            entry.data.get("speech_auth_key")
+                            and not entry.data.get("cloud_ru_api_key")
+                        )
+                        else DEFAULT_TTS_MODEL
+                    )
+                    new_tts_data = {
+                        CONF_TTS_MODEL: default_tts_model,
+                        **dict(sub.data),
+                    }
+                    hass.config_entries.async_update_subentry(
+                        entry, sub, data=new_tts_data
+                    )
 
     if "ai_task_data" not in existing_types:
         hass.config_entries.async_add_subentry(

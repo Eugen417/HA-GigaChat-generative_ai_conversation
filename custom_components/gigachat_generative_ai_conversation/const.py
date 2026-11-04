@@ -20,6 +20,7 @@ CONF_IMAGE_MODEL = "image_model"
 CONF_TEMPERATURE = "temperature"
 CONF_MAX_TOKENS = "max_tokens"
 
+CONF_TTS_MODEL = "tts_model"
 CONF_TTS_VOICE = "tts_voice"
 
 CONF_STT_MODEL = "stt_model"
@@ -77,7 +78,8 @@ DEFAULT_VISION_MODEL = "Qwen/Qwen3.6-35B-A3B"
 DEFAULT_SBER_VISION_MODEL = "GigaChat-2-Pro"
 DEFAULT_STT_MODEL = "GigaChat/GigaASR"
 DEFAULT_STT_LANGUAGE = "ru-RU"
-DEFAULT_TTS_VOICE = "Nec_24000"
+DEFAULT_TTS_MODEL = "GigaChat/SaluteSpeech"
+DEFAULT_TTS_VOICE = "Bab-Freespeech"
 
 RECOMMENDED_TEMPERATURE = 0.3
 RECOMMENDED_MAX_TOKENS = 2000
@@ -143,26 +145,50 @@ STT_LANGUAGES = [
     "kk-KZ",
 ]
 
+TTS_MODELS = [
+    "GigaChat/SaluteSpeech",
+    "SaluteSpeech",
+]
+
+TTS_MODEL_LABELS: dict[str, str] = {
+    "GigaChat/SaluteSpeech": "GigaChat/SaluteSpeech [Cloud.ru] (Realtime Preview — голос Bab-Freespeech, 24 кГц)",
+    "SaluteSpeech": "SaluteSpeech Classic [Sber Studio] (Наталья, Борис, Марфа, Тарас, Александра, Сергей)",
+}
+
+TTS_VOICES_BY_MODEL: dict[str, dict[str, list[tuple[str, str]]]] = {
+    "GigaChat/SaluteSpeech": {
+        "ru-RU": [
+            ("Bab-Freespeech", "Варвара / Bab-Freespeech (24 кГц)"),
+        ],
+    },
+    "SaluteSpeech": {
+        "ru-RU": [
+            ("Nec_24000", "Наталья (Женский, 24 кГц)"),
+            ("Bys_24000", "Борис (Мужской, 24 кГц)"),
+            ("May_24000", "Марфа (Женский, 24 кГц)"),
+            ("Tur_24000", "Тарас (Мужской, 24 кГц)"),
+            ("Ost_24000", "Александра (Женский, 24 кГц)"),
+            ("Pon_24000", "Сергей (Мужской, 24 кГц)"),
+            ("Nec_8000", "Наталья (8 кГц)"),
+            ("Bys_8000", "Борис (8 кГц)"),
+            ("May_8000", "Марфа (8 кГц)"),
+            ("Tur_8000", "Тарас (8 кГц)"),
+            ("Ost_8000", "Александра (8 кГц)"),
+            ("Pon_8000", "Сергей (8 кГц)"),
+        ],
+        "en-US": [
+            ("Kin_24000", "Kira (Female, 24 kHz)"),
+            ("Kin_8000", "Kira (Female, 8 kHz)"),
+        ],
+    },
+}
+
 TTS_VOICES: dict[str, list[tuple[str, str]]] = {
     "ru-RU": [
-        ("Bab-Freespeech", "Варвара / Bab-Freespeech (Cloud.ru, 24 кГц)"),
-        ("Nec_24000", "Наталья (Женский, 24 кГц)"),
-        ("Bys_24000", "Борис (Мужской, 24 кГц)"),
-        ("May_24000", "Марфа (Женский, 24 кГц)"),
-        ("Tur_24000", "Тарас (Мужской, 24 кГц)"),
-        ("Ost_24000", "Александра (Женский, 24 кГц)"),
-        ("Pon_24000", "Сергей (Мужской, 24 кГц)"),
-        ("Nec_8000", "Наталья (8 кГц, архивный SaluteSpeech)"),
-        ("Bys_8000", "Борис (8 кГц, архивный SaluteSpeech)"),
-        ("May_8000", "Марфа (8 кГц, архивный SaluteSpeech)"),
-        ("Tur_8000", "Тарас (8 кГц, архивный SaluteSpeech)"),
-        ("Ost_8000", "Александра (8 кГц, архивный SaluteSpeech)"),
-        ("Pon_8000", "Сергей (8 кГц, архивный SaluteSpeech)"),
+        *TTS_VOICES_BY_MODEL["GigaChat/SaluteSpeech"]["ru-RU"],
+        *TTS_VOICES_BY_MODEL["SaluteSpeech"]["ru-RU"],
     ],
-    "en-US": [
-        ("Kin_24000", "Kira (Female, 24 kHz)"),
-        ("Kin_8000", "Kira (Female, 8 kHz)"),
-    ],
+    "en-US": TTS_VOICES_BY_MODEL["SaluteSpeech"]["en-US"],
 }
 
 TTS_LANGUAGES = list(TTS_VOICES.keys())
@@ -182,6 +208,7 @@ RECOMMENDED_STT_OPTIONS: dict[str, Any] = {
 }
 
 RECOMMENDED_TTS_OPTIONS: dict[str, Any] = {
+    CONF_TTS_MODEL: DEFAULT_TTS_MODEL,
     CONF_TTS_VOICE: DEFAULT_TTS_VOICE,
 }
 

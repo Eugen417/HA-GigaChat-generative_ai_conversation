@@ -21,11 +21,11 @@ from .const import (
     CONF_IMAGE_MODEL,
     CONF_RECOMMENDED,
     CONF_STT_MODEL,
-    CONF_TTS_VOICE,
+    CONF_TTS_MODEL,
     DEFAULT_CHAT_MODEL,
     DEFAULT_IMAGE_MODEL,
     DEFAULT_STT_MODEL,
-    DEFAULT_TTS_VOICE,
+    DEFAULT_TTS_MODEL,
     DOMAIN,
 )
 
@@ -39,7 +39,7 @@ def _subentry_default_model(subentry: ConfigSubentry) -> str:
     if subentry.subentry_type == "stt":
         return str(subentry.data.get(CONF_STT_MODEL) or DEFAULT_STT_MODEL)
     if subentry.subentry_type == "tts":
-        return str(subentry.data.get(CONF_TTS_VOICE) or DEFAULT_TTS_VOICE)
+        return str(subentry.data.get(CONF_TTS_MODEL) or DEFAULT_TTS_MODEL)
     if subentry.data.get(CONF_RECOMMENDED):
         return DEFAULT_CHAT_MODEL
     return str(subentry.data.get(CONF_CHAT_MODEL) or DEFAULT_CHAT_MODEL)

@@ -22,12 +22,13 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
     CLOUD_RU_BASE_URL,
+    CONF_TTS_MODEL,
     CONF_TTS_VOICE,
+    DEFAULT_TTS_MODEL,
     DEFAULT_TTS_VOICE,
     DOMAIN,
     SALUTE_SPEECH_TTS_URL,
-    TTS_LANGUAGES,
-    TTS_VOICES,
+    TTS_VOICES_BY_MODEL,
 )
 from .entity import GigaChatBaseLLMEntity
 
@@ -54,8 +55,17 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
 
     def __init__(self, entry: ConfigEntry, subentry: ConfigSubentry) -> None:
         """Initialize the TTS entity."""
-        super().__init__(entry, subentry, DEFAULT_TTS_VOICE)
+        super().__init__(entry, subentry, DEFAULT_TTS_MODEL)
         self._unsupported_cloud_voices: set[str] = set()
+
+    def _active_tts_model(self) -> str:
+        """Return the active TTS model ('GigaChat/SaluteSpeech' or 'SaluteSpeech')."""
+        configured = self.subentry.data.get(CONF_TTS_MODEL)
+        if configured in TTS_VOICES_BY_MODEL:
+            return str(configured)
+        if self.has_separate_speech_key and not self.cloud_ru_api_key:
+            return "SaluteSpeech"
+        return DEFAULT_TTS_MODEL
 
     @property
     def default_language(self) -> str:
@@ -64,8 +74,11 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
 
     @property
     def supported_languages(self) -> list[str]:
-        """Return a list of supported languages."""
-        return TTS_LANGUAGES
+        """Return a list of supported languages for the selected TTS model."""
+        model_voices = TTS_VOICES_BY_MODEL.get(
+            self._active_tts_model(), TTS_VOICES_BY_MODEL[DEFAULT_TTS_MODEL]
+        )
+        return list(model_voices.keys())
 
     @property
     def supported_options(self) -> list[str]:
@@ -74,49 +87,48 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
 
     @property
     def default_options(self) -> Mapping[str, Any]:
-        """Return a mapping with the default options."""
-        options = self.subentry.data
-        fallback_voice = (
-            "Bab-Freespeech"
-            if (self.cloud_ru_api_key and not self.has_separate_speech_key)
-            else DEFAULT_TTS_VOICE
-        )
-        return {
-            ATTR_VOICE: options.get(CONF_TTS_VOICE, fallback_voice),
-        }
+        """Return a mapping with the default options for the active TTS model."""
+        active_model = self._active_tts_model()
+        if active_model == "GigaChat/SaluteSpeech":
+            return {ATTR_VOICE: "Bab-Freespeech"}
+        saved_voice = str(self.subentry.data.get(CONF_TTS_VOICE) or "Nec_24000")
+        if saved_voice == "Bab-Freespeech":
+            saved_voice = "Nec_24000"
+        return {ATTR_VOICE: saved_voice}
 
     @callback
     def async_get_supported_voices(self, language: str) -> list[Voice] | None:
-        """Return a list of supported voices for a language."""
-        if not (voices := TTS_VOICES.get(language)):
+        """Return a list of supported voices for the active TTS model and language."""
+        model_voices = TTS_VOICES_BY_MODEL.get(
+            self._active_tts_model(), TTS_VOICES_BY_MODEL[DEFAULT_TTS_MODEL]
+        )
+        if not (voices := model_voices.get(language)):
             return None
-        if self.cloud_ru_api_key and not self.has_separate_speech_key:
-            # Cloud.ru /v1/realtime operates exclusively at 24 kHz
-            return [
-                Voice(voice_id, voice_name)
-                for voice_id, voice_name in voices
-                if not voice_id.endswith("_8000")
-            ]
         return [Voice(voice_id, voice_name) for voice_id, voice_name in voices]
 
     async def async_get_tts_audio(
         self, message: str, language: str, options: dict[str, Any]
     ) -> TtsAudioType:
-        """Load TTS audio from Sber SaluteSpeech REST API."""
-        entry_options = self.subentry.data
-        voice = str(
-            options.get(
-                ATTR_VOICE, entry_options.get(CONF_TTS_VOICE, DEFAULT_TTS_VOICE)
-            )
+        """Load TTS audio from Cloud.ru Realtime or Sber SaluteSpeech REST API."""
+        active_model = self._active_tts_model()
+        default_voice = (
+            "Bab-Freespeech"
+            if active_model == "GigaChat/SaluteSpeech"
+            else "Nec_24000"
         )
+        voice = str(options.get(ATTR_VOICE) or default_voice)
 
         params = {
             "format": "wav16",
-            "voice": voice,
+            "voice": voice if voice != "Bab-Freespeech" else "Nec_24000",
         }
 
+        use_cloud_ru = bool(self.cloud_ru_api_key) and (
+            active_model == "GigaChat/SaluteSpeech" or not self.has_separate_speech_key
+        )
+
         # Cloud.ru Evolution Foundation Models TTS (`GigaChat/SaluteSpeech` via /v1/realtime WS)
-        if self.cloud_ru_api_key and not self.has_separate_speech_key:
+        if use_cloud_ru:
             audio_wav = await self._async_cloud_ru_realtime_tts(message, voice)
             if audio_wav:
                 if self.hass is not None:
@@ -127,7 +139,7 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
                         {
                             "chars": chars,
                             "cost_rub": chars * 0.41 / 1000.0,
-                            "model": f"GigaChat/SaluteSpeech ({voice})",
+                            "model": "GigaChat/SaluteSpeech (Bab-Freespeech)",
                         },
                     )
                 return ("wav", audio_wav)

@@ -33,6 +33,7 @@ from .const import (
     CONF_SPEECH_SCOPE,
     CONF_STT_MODEL,
     CONF_TEMPERATURE,
+    CONF_TTS_MODEL,
     CONF_TTS_VOICE,
     CONF_VERIFY_SSL,
     DEFAULT_CHAT_MODEL,
@@ -536,6 +537,7 @@ class GigaChatBaseLLMEntity(Entity):
             model = (
                 subentry.data.get(CONF_CHAT_MODEL)
                 or subentry.data.get(CONF_STT_MODEL)
+                or subentry.data.get(CONF_TTS_MODEL)
                 or subentry.data.get(CONF_TTS_VOICE)
                 or subentry.data.get(CONF_IMAGE_MODEL)
                 or default_model

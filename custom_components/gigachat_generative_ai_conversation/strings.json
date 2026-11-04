@@ -91,6 +91,7 @@
         "set_options": {
           "data": {
             "name": "Name",
+            "tts_model": "Synthesis model",
             "tts_voice": "Default voice"
           }
         }

@@ -46,6 +46,7 @@ from .const import (
     CONF_STT_LANGUAGE,
     CONF_STT_MODEL,
     CONF_TEMPERATURE,
+    CONF_TTS_MODEL,
     CONF_TTS_VOICE,
     CONF_VERIFY_SSL,
     DEFAULT_AI_TASK_IMAGE_NAME,
@@ -61,6 +62,7 @@ from .const import (
     DEFAULT_STT_MODEL,
     DEFAULT_STT_NAME,
     DEFAULT_TITLE,
+    DEFAULT_TTS_MODEL,
     DEFAULT_TTS_NAME,
     DEFAULT_TTS_VOICE,
     DEFAULT_VERIFY_SSL,
@@ -80,6 +82,8 @@ from .const import (
     SALUTE_SPEECH_SCOPES,
     STT_LANGUAGES,
     STT_MODELS,
+    TTS_MODEL_LABELS,
+    TTS_MODELS,
 )
 
 
@@ -504,34 +508,19 @@ def _gigachat_config_option_schema(
             }
         )
     elif subentry_type == "tts":
-        voice_choices = [
-            SelectOptionDict(
-                label="Варвара / Bab-Freespeech (Cloud.ru, 24 кГц)",
-                value="Bab-Freespeech",
-            ),
-            SelectOptionDict(label="Наталья (Женский, 24 кГц)", value="Nec_24000"),
-            SelectOptionDict(label="Борис (Мужской, 24 кГц)", value="Bys_24000"),
-            SelectOptionDict(label="Марфа (Женский, 24 кГц)", value="May_24000"),
-            SelectOptionDict(label="Тарас (Мужской, 24 кГц)", value="Tur_24000"),
-            SelectOptionDict(label="Александра (Женский, 24 кГц)", value="Ost_24000"),
-            SelectOptionDict(label="Сергей (Мужской, 24 кГц)", value="Pon_24000"),
-            SelectOptionDict(label="Kira (en-US, 24 kHz)", value="Kin_24000"),
-            SelectOptionDict(label="Наталья (8 кГц, архивный SaluteSpeech)", value="Nec_8000"),
-            SelectOptionDict(label="Борис (8 кГц, архивный SaluteSpeech)", value="Bys_8000"),
-            SelectOptionDict(label="Марфа (8 кГц, архивный SaluteSpeech)", value="May_8000"),
-            SelectOptionDict(label="Тарас (8 кГц, архивный SaluteSpeech)", value="Tur_8000"),
-            SelectOptionDict(label="Александра (8 кГц, архивный SaluteSpeech)", value="Ost_8000"),
-            SelectOptionDict(label="Сергей (8 кГц, архивный SaluteSpeech)", value="Pon_8000"),
-            SelectOptionDict(label="Kira (en-US, 8 kHz)", value="Kin_8000"),
+        tts_model_choices = [
+            SelectOptionDict(label=TTS_MODEL_LABELS.get(m, m), value=m)
+            for m in TTS_MODELS
         ]
         schema.update(
             {
                 vol.Optional(
-                    CONF_TTS_VOICE,
-                    default=options.get(CONF_TTS_VOICE, DEFAULT_TTS_VOICE),
+                    CONF_TTS_MODEL,
+                    default=options.get(CONF_TTS_MODEL, DEFAULT_TTS_MODEL),
                 ): SelectSelector(
                     SelectSelectorConfig(
-                        options=voice_choices, mode=SelectSelectorMode.DROPDOWN
+                        options=tts_model_choices,
+                        mode=SelectSelectorMode.DROPDOWN,
                     )
                 ),
             }
