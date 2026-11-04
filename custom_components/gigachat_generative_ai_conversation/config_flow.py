@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from typing import Any, override
 
+import aiohttp
 import voluptuous as vol
 
 from homeassistant.config_entries import (
@@ -34,6 +35,7 @@ from homeassistant.helpers.selector import (
 from .const import (
     CHAT_MODEL_LABELS,
     CHAT_MODELS,
+    CLOUD_RU_BASE_URL,
     CONF_AUTH_KEY,
     CONF_CHAT_MODEL,
     CONF_CLOUD_RU_API_KEY,
@@ -284,10 +286,35 @@ class GigaChatAIConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
 
+async def _async_fetch_cloud_ru_models(api_key: str) -> list[dict[str, Any]]:
+    """Fetch live model list from Cloud.ru GET /v1/models (listModels)."""
+    headers: dict[str, str] = {"Accept": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    try:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get(
+                f"{CLOUD_RU_BASE_URL}/models",
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp,
+        ):
+            if resp.status == 200:
+                payload = await resp.json()
+                data = payload.get("data")
+                if isinstance(data, list):
+                    return [m for m in data if isinstance(m, dict) and m.get("id")]
+    except Exception:  # noqa: BLE001
+        pass
+    return []
+
+
 class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
     """Flow for managing Sber GigaChat AI subentries."""
 
     last_rendered_recommended: bool = True
+    _cloud_ru_live_models: list[dict[str, Any]] | None = None
 
     @property
     def _is_new(self) -> bool:
@@ -300,6 +327,11 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
         """Set subentry options."""
         if self._get_entry().state is not ConfigEntryState.LOADED:
             return self.async_abort(reason="entry_not_loaded")
+
+        entry_data = self._get_entry().data
+        cloud_key = str(entry_data.get(CONF_CLOUD_RU_API_KEY, "")).strip()
+        if cloud_key and self._cloud_ru_live_models is None:
+            self._cloud_ru_live_models = await _async_fetch_cloud_ru_models(cloud_key)
 
         if user_input is None:
             if self._is_new:
@@ -336,7 +368,8 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
                     self._is_new,
                     self._subentry_type,
                     options,
-                    self._get_entry().data,
+                    entry_data,
+                    self._cloud_ru_live_models,
                 )
                 return self.async_show_form(
                     step_id="set_options",
@@ -376,7 +409,8 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
             self._is_new,
             self._subentry_type,
             options,
-            self._get_entry().data,
+            entry_data,
+            self._cloud_ru_live_models,
         )
         return self.async_show_form(
             step_id="set_options",
@@ -393,6 +427,7 @@ def _gigachat_config_option_schema(
     subentry_type: str,
     options: Mapping[str, Any],
     entry_data: Mapping[str, Any] | None = None,
+    cloud_ru_live_models: list[dict[str, Any]] | None = None,
 ) -> dict[Any, Any]:
     """Return a schema for Sber GigaChat AI subentry options filtered by active API keys."""
     edata = entry_data or {}
@@ -417,15 +452,51 @@ def _gigachat_config_option_schema(
     else:
         schema = {}
 
+    live_cloud_ids: set[str] = set()
+    dynamic_labels: dict[str, str] = dict(CHAT_MODEL_LABELS)
+    if cloud_ru_live_models:
+        for m_obj in cloud_ru_live_models:
+            mid = str(m_obj.get("id") or "")
+            meta = m_obj.get("metadata") or {}
+            if not mid or meta.get("provider") != "cloud.ru":
+                continue
+            live_cloud_ids.add(mid)
+            if mid not in dynamic_labels and meta.get("type") in (
+                "llm",
+                "image+text-to-text",
+            ):
+                p_cost = meta.get("prompt_tokens_cost", 0)
+                g_cost = meta.get("generated_tokens_cost", 0)
+                title = meta.get("name") or mid
+                dynamic_labels[mid] = (
+                    f"{title} [Cloud.ru] ({p_cost} / {g_cost} ₽ за 1M)"
+                )
+
     available_chat_models = [
         m
         for m in CHAT_MODELS
-        if ("/" in m and has_cloud_ru)
+        if (
+            "/" in m
+            and has_cloud_ru
+            and (not live_cloud_ids or m in live_cloud_ids)
+        )
         or ("/" not in m and has_sber_studio)
         or (not has_cloud_ru and not has_sber_studio)
     ]
+    if has_cloud_ru and cloud_ru_live_models:
+        for m_obj in cloud_ru_live_models:
+            mid = str(m_obj.get("id") or "")
+            meta = m_obj.get("metadata") or {}
+            if (
+                mid
+                and meta.get("provider") == "cloud.ru"
+                and meta.get("type") in ("llm", "image+text-to-text")
+                and mid not in available_chat_models
+            ):
+                available_chat_models.append(mid)
+
     chat_model_choices = [
-        SelectOptionDict(label=CHAT_MODEL_LABELS.get(m, m), value=m)
+        SelectOptionDict(label=dynamic_labels.get(m, m), value=m)
         for m in available_chat_models
     ]
     image_model_choices = [
