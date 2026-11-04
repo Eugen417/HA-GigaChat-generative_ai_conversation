@@ -245,6 +245,44 @@ GIGACHAT_ULTRA_BASE_URL = "https://api.giga.chat/v1"
 SALUTE_SPEECH_TTS_URL = "https://smartspeech.sber.ru/rest/v1/text:synthesize"
 SALUTE_SPEECH_STT_URL = "https://smartspeech.sber.ru/rest/v1/speech:recognize"
 
+def get_recommended_model(
+    entry_data: dict[str, Any] | Any, subentry_type: str
+) -> str:
+    """Return the recommended model for a subentry based on configured API keys."""
+    edata = entry_data or {}
+    has_cloud = bool(str(edata.get(CONF_CLOUD_RU_API_KEY, "")).strip())
+    has_sber = bool(str(edata.get(CONF_AUTH_KEY, "")).strip())
+    has_speech = bool(str(edata.get(CONF_SPEECH_AUTH_KEY, "")).strip())
+
+    if subentry_type == "ai_task_image":
+        return DEFAULT_IMAGE_MODEL
+    if subentry_type == "stt":
+        if has_cloud:
+            return DEFAULT_STT_MODEL
+        if has_sber:
+            return "GigaChat-Audio"
+        if has_speech:
+            return "general"
+        return DEFAULT_STT_MODEL
+    if subentry_type == "tts":
+        if has_cloud:
+            return DEFAULT_TTS_MODEL
+        if has_speech:
+            return "SaluteSpeech"
+        return DEFAULT_TTS_MODEL
+    if subentry_type == "ai_task_data":
+        if has_sber:
+            return DEFAULT_SBER_STUDIO_CHAT_MODEL
+        if has_cloud:
+            return DEFAULT_VISION_MODEL
+        return DEFAULT_CHAT_MODEL
+    if has_sber:
+        return DEFAULT_SBER_STUDIO_CHAT_MODEL
+    if has_cloud:
+        return "GigaChat/GigaChat-3-Pro"
+    return DEFAULT_CHAT_MODEL
+
+
 PLATFORMS = [
     Platform.CONVERSATION,
     Platform.STT,

@@ -22,27 +22,25 @@ from .const import (
     CONF_RECOMMENDED,
     CONF_STT_MODEL,
     CONF_TTS_MODEL,
-    DEFAULT_CHAT_MODEL,
-    DEFAULT_IMAGE_MODEL,
-    DEFAULT_STT_MODEL,
-    DEFAULT_TTS_MODEL,
     DOMAIN,
+    get_recommended_model,
 )
 
 
-def _subentry_default_model(subentry: ConfigSubentry) -> str:
+def _subentry_default_model(entry: ConfigEntry, subentry: ConfigSubentry) -> str:
     """Return the display model for a subentry device."""
+    rec_model = get_recommended_model(entry.data, subentry.subentry_type)
     if subentry.subentry_type == "ai_task_image":
-        if subentry.data.get(CONF_RECOMMENDED):
-            return DEFAULT_IMAGE_MODEL
-        return str(subentry.data.get(CONF_IMAGE_MODEL) or DEFAULT_IMAGE_MODEL)
+        if subentry.data.get(CONF_RECOMMENDED, True):
+            return rec_model
+        return str(subentry.data.get(CONF_IMAGE_MODEL) or rec_model)
     if subentry.subentry_type == "stt":
-        return str(subentry.data.get(CONF_STT_MODEL) or DEFAULT_STT_MODEL)
+        return str(subentry.data.get(CONF_STT_MODEL) or rec_model)
     if subentry.subentry_type == "tts":
-        return str(subentry.data.get(CONF_TTS_MODEL) or DEFAULT_TTS_MODEL)
-    if subentry.data.get(CONF_RECOMMENDED):
-        return DEFAULT_CHAT_MODEL
-    return str(subentry.data.get(CONF_CHAT_MODEL) or DEFAULT_CHAT_MODEL)
+        return str(subentry.data.get(CONF_TTS_MODEL) or rec_model)
+    if subentry.data.get(CONF_RECOMMENDED, True):
+        return rec_model
+    return str(subentry.data.get(CONF_CHAT_MODEL) or rec_model)
 
 
 async def async_setup_entry(
@@ -106,7 +104,7 @@ class GigaChatSubentryUsageSensor(RestoreSensor):
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
             manufacturer="Sber",
-            model=_subentry_default_model(subentry),
+            model=_subentry_default_model(entry, subentry),
             entry_type=dr.DeviceEntryType.SERVICE,
         )
 
@@ -200,7 +198,7 @@ class GigaChatSubentryCostSensor(RestoreSensor):
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
             manufacturer="Sber",
-            model=_subentry_default_model(subentry),
+            model=_subentry_default_model(entry, subentry),
             entry_type=dr.DeviceEntryType.SERVICE,
         )
 

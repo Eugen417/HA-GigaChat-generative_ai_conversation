@@ -47,6 +47,7 @@ from .const import (
     OAUTH_URL,
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_TEMPERATURE,
+    get_recommended_model,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -529,14 +530,19 @@ class GigaChatBaseLLMEntity(Entity):
             entry.data.get(CONF_SPEECH_SCOPE, DEFAULT_SPEECH_SCOPE)
         )
         self.verify_ssl = bool(entry.data.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL))
-        self.default_model = default_model
+        rec_model = get_recommended_model(entry.data, subentry.subentry_type)
+        self.default_model = rec_model or default_model
         self._attr_name = subentry.title
         self._attr_unique_id = subentry.subentry_id
 
-        if subentry.data.get(CONF_RECOMMENDED):
-            model = default_model
+        if subentry.subentry_type in (
+            "conversation",
+            "ai_task_data",
+            "ai_task_image",
+        ) and subentry.data.get(CONF_RECOMMENDED, True):
+            model = self.default_model
         elif subentry.subentry_type == "ai_task_image":
-            model = subentry.data.get(CONF_IMAGE_MODEL) or default_model
+            model = subentry.data.get(CONF_IMAGE_MODEL) or self.default_model
         else:
             model = (
                 subentry.data.get(CONF_CHAT_MODEL)
@@ -544,13 +550,14 @@ class GigaChatBaseLLMEntity(Entity):
                 or subentry.data.get(CONF_TTS_MODEL)
                 or subentry.data.get(CONF_TTS_VOICE)
                 or subentry.data.get(CONF_IMAGE_MODEL)
-                or default_model
+                or self.default_model
             )
+        model_str = _LEGACY_MODEL_MAP.get(str(model), str(model))
         self._attr_device_info = dr.DeviceInfo(
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
             manufacturer="Sber",
-            model=str(model),
+            model=model_str,
             entry_type=dr.DeviceEntryType.SERVICE,
         )
 

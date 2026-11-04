@@ -86,6 +86,7 @@ from .const import (
     STT_MODELS,
     TTS_MODEL_LABELS,
     TTS_MODELS,
+    get_recommended_model,
 )
 
 
@@ -352,17 +353,22 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
                 options.get(CONF_RECOMMENDED, True)
             )
         else:
+            # Re-render the form when user unchecks 'Recommended' so custom model fields appear
             if (
                 CONF_RECOMMENDED in user_input
-                and bool(user_input[CONF_RECOMMENDED]) != self.last_rendered_recommended
+                and self.last_rendered_recommended
+                and not bool(user_input[CONF_RECOMMENDED])
             ):
-                self.last_rendered_recommended = bool(user_input[CONF_RECOMMENDED])
+                self.last_rendered_recommended = False
                 base_opts = (
                     {}
                     if self._is_new
                     else self._get_reconfigure_subentry().data.copy()
                 )
                 options = {**base_opts, **user_input}
+                options[CONF_CHAT_MODEL] = get_recommended_model(
+                    entry_data, self._subentry_type
+                )
                 schema = _gigachat_config_option_schema(
                     self.hass,
                     self._is_new,
@@ -380,12 +386,13 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
                 user_input.pop(CONF_LLM_HASS_API, None)
 
             if user_input.get(CONF_RECOMMENDED):
+                rec_model = get_recommended_model(entry_data, self._subentry_type)
                 if self._subentry_type in ("conversation", "ai_task_data"):
-                    user_input[CONF_CHAT_MODEL] = DEFAULT_CHAT_MODEL
+                    user_input[CONF_CHAT_MODEL] = rec_model
                     user_input[CONF_TEMPERATURE] = RECOMMENDED_TEMPERATURE
                     user_input[CONF_MAX_TOKENS] = RECOMMENDED_MAX_TOKENS
                 elif self._subentry_type == "ai_task_image":
-                    user_input[CONF_IMAGE_MODEL] = DEFAULT_IMAGE_MODEL
+                    user_input[CONF_IMAGE_MODEL] = rec_model
 
             if self._is_new:
                 return self.async_create_entry(

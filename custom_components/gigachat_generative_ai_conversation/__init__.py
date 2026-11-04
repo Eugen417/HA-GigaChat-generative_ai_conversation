@@ -18,6 +18,7 @@ from .const import (
     CONF_LLM_HASS_API,
     CONF_MAX_TOKENS,
     CONF_PROMPT,
+    CONF_RECOMMENDED,
     CONF_STT_MODEL,
     CONF_TEMPERATURE,
     CONF_TTS_MODEL,
@@ -40,6 +41,7 @@ from .const import (
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_STT_OPTIONS,
     RECOMMENDED_TEMPERATURE,
+    get_recommended_model,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -198,6 +200,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    device_registry = dr.async_get(hass)
+    for sub in entry.subentries.values():
+        rec_model = get_recommended_model(entry.data, sub.subentry_type)
+        if sub.subentry_type in ("conversation", "ai_task_data", "ai_task_image"):
+            if sub.data.get(CONF_RECOMMENDED, True):
+                disp_model = rec_model
+            elif sub.subentry_type == "ai_task_image":
+                disp_model = str(sub.data.get(CONF_IMAGE_MODEL) or rec_model)
+            else:
+                disp_model = str(sub.data.get(CONF_CHAT_MODEL) or rec_model)
+        elif sub.subentry_type == "stt":
+            disp_model = str(sub.data.get(CONF_STT_MODEL) or rec_model)
+        elif sub.subentry_type == "tts":
+            disp_model = str(sub.data.get(CONF_TTS_MODEL) or rec_model)
+        else:
+            disp_model = rec_model
+
+        if dev := device_registry.async_get_device(
+            identifiers={(DOMAIN, sub.subentry_id)}
+        ):
+            if dev.model != disp_model or dev.name != sub.title:
+                device_registry.async_update_device(
+                    dev.id,
+                    name=sub.title,
+                    model=disp_model,
+                )
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
 
