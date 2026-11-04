@@ -505,6 +505,10 @@ def _gigachat_config_option_schema(
         )
     elif subentry_type == "tts":
         voice_choices = [
+            SelectOptionDict(
+                label="Варвара / Bab-Freespeech (Cloud.ru, 24 кГц)",
+                value="Bab-Freespeech",
+            ),
             SelectOptionDict(label="Наталья (Женский, 24 кГц)", value="Nec_24000"),
             SelectOptionDict(label="Борис (Мужской, 24 кГц)", value="Bys_24000"),
             SelectOptionDict(label="Марфа (Женский, 24 кГц)", value="May_24000"),
@@ -512,12 +516,12 @@ def _gigachat_config_option_schema(
             SelectOptionDict(label="Александра (Женский, 24 кГц)", value="Ost_24000"),
             SelectOptionDict(label="Сергей (Мужской, 24 кГц)", value="Pon_24000"),
             SelectOptionDict(label="Kira (en-US, 24 kHz)", value="Kin_24000"),
-            SelectOptionDict(label="Наталья (8 кГц)", value="Nec_8000"),
-            SelectOptionDict(label="Борис (8 кГц)", value="Bys_8000"),
-            SelectOptionDict(label="Марфа (8 кГц)", value="May_8000"),
-            SelectOptionDict(label="Тарас (8 кГц)", value="Tur_8000"),
-            SelectOptionDict(label="Александра (8 кГц)", value="Ost_8000"),
-            SelectOptionDict(label="Сергей (8 кГц)", value="Pon_8000"),
+            SelectOptionDict(label="Наталья (8 кГц, архивный SaluteSpeech)", value="Nec_8000"),
+            SelectOptionDict(label="Борис (8 кГц, архивный SaluteSpeech)", value="Bys_8000"),
+            SelectOptionDict(label="Марфа (8 кГц, архивный SaluteSpeech)", value="May_8000"),
+            SelectOptionDict(label="Тарас (8 кГц, архивный SaluteSpeech)", value="Tur_8000"),
+            SelectOptionDict(label="Александра (8 кГц, архивный SaluteSpeech)", value="Ost_8000"),
+            SelectOptionDict(label="Сергей (8 кГц, архивный SaluteSpeech)", value="Pon_8000"),
             SelectOptionDict(label="Kira (en-US, 8 kHz)", value="Kin_8000"),
         ]
         schema.update(

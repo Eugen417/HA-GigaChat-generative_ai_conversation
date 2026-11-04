@@ -55,6 +55,7 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
     def __init__(self, entry: ConfigEntry, subentry: ConfigSubentry) -> None:
         """Initialize the TTS entity."""
         super().__init__(entry, subentry, DEFAULT_TTS_VOICE)
+        self._unsupported_cloud_voices: set[str] = set()
 
     @property
     def default_language(self) -> str:
@@ -75,8 +76,13 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
     def default_options(self) -> Mapping[str, Any]:
         """Return a mapping with the default options."""
         options = self.subentry.data
+        fallback_voice = (
+            "Bab-Freespeech"
+            if (self.cloud_ru_api_key and not self.has_separate_speech_key)
+            else DEFAULT_TTS_VOICE
+        )
         return {
-            ATTR_VOICE: options.get(CONF_TTS_VOICE, DEFAULT_TTS_VOICE),
+            ATTR_VOICE: options.get(CONF_TTS_VOICE, fallback_voice),
         }
 
     @callback
@@ -84,6 +90,13 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
         """Return a list of supported voices for a language."""
         if not (voices := TTS_VOICES.get(language)):
             return None
+        if self.cloud_ru_api_key and not self.has_separate_speech_key:
+            # Cloud.ru /v1/realtime operates exclusively at 24 kHz
+            return [
+                Voice(voice_id, voice_name)
+                for voice_id, voice_name in voices
+                if not voice_id.endswith("_8000")
+            ]
         return [Voice(voice_id, voice_name) for voice_id, voice_name in voices]
 
     async def async_get_tts_audio(
@@ -178,9 +191,18 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
             "OpenAI-Beta": "realtime=v1",
         }
         sample_rate = 24000
-        # Cloud.ru gigatts uses 'Bab-Freespeech' (or *-Freespeech) by default
-        custom_voice = voice if "Freespeech" in voice else None
-        candidates = [custom_voice, None] if custom_voice else [None]
+        # Map classic SaluteSpeech voice codes (e.g. Bys_24000) to Cloud.ru gigatts format (Bys-Freespeech)
+        prefix = voice.split("_")[0].split("-")[0] if voice else "Bab"
+        freespeech_voice = (
+            voice if "Freespeech" in voice else f"{prefix}-Freespeech"
+        )
+        candidates: list[str | None] = []
+        if (
+            freespeech_voice != "Bab-Freespeech"
+            and freespeech_voice not in self._unsupported_cloud_voices
+        ):
+            candidates.append(freespeech_voice)
+        candidates.append(None)
 
         for voice_candidate in candidates:
             audio_chunks: list[bytes] = []
@@ -202,6 +224,11 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
                                     "voice": voice_candidate,
                                     "output_audio_format": "pcm16",
                                     "modalities": ["audio", "text"],
+                                    "gigatts": {
+                                        "voice": voice_candidate,
+                                        "lang": "auto",
+                                        "content_type": "text",
+                                    },
                                 },
                             }
                         )
@@ -258,6 +285,16 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
                                     err_obj = data.get("error", {})
                                     if err_obj.get("param") == "audio.output.voice":
                                         had_voice_error = True
+                                        if voice_candidate:
+                                            self._unsupported_cloud_voices.add(
+                                                voice_candidate
+                                            )
+                                            _LOGGER.info(
+                                                "Cloud.ru SaluteSpeech Preview does not support voice '%s' (%s); "
+                                                "falling back to default voice 'Bab-Freespeech'",
+                                                voice_candidate,
+                                                err_obj.get("message", ""),
+                                            )
                                     else:
                                         _LOGGER.warning(
                                             "Cloud.ru Realtime TTS error event: %s",
