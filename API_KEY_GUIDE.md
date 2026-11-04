@@ -10,8 +10,8 @@
      - **GigaChat 3 Pro** (`GigaChat/GigaChat-3-Pro` — 73 / 176 ₽ за 1 млн токенов),
      - **GigaChat 3.5 Reasoning** (`ai-sage/GigaChat3.5-432B-A28B-Reasoning` — 96 / 288 ₽ за 1 млн токенов),
      - **GigaChat 3 10B** (`ai-sage/GigaChat3-10B-A1.8B` — 12.2 ₽ за 1 млн токенов),
-     - **Распознавание речи (STT)**: `GigaChat/GigaASR` (0.01 ₽/сек) и `openai/whisper-large-v3` (0.0061 ₽/сек),
-     - **Vision (анализ камер)**: `Qwen/Qwen3.6-35B-A3B`, `Qwen/Qwen3.5-397B-A17B`, `moonshotai/Kimi-K2.6`.
+     - **Распознавание речи (STT)**: `GigaChat/GigaASR` (0.01 ₽/сек) и `openai/whisper-large-v3` (0.01 ₽/сек),
+     - **Vision (анализ камер)**: `Qwen/Qwen3.6-35B-A3B`, `Qwen/Qwen3.5-397B-A17B`, `moonshotai/Kimi-K2.6`, `MiniMaxAI/MiniMax-M3`.
 
 2. 🧩 **Поле 2 (Опциональный ключ #1 — рекомендуется указывать в паре с Полем 1) — Ключ авторизации GigaChat в Sber Studio (`Authorization Key`)**
    - Открывает доступ к **Freemium-режиму для физлиц (365 000 000 бесплатных токенов на 12 месяцев)**: 250M на `GigaChat-2` (Lite), 50M на `GigaChat-3-Ultra`, 40M на `GigaChat-2-Pro` и 25M на `GigaChat-2-Max` (по [официальным тарифам для физлиц](https://developers.sber.ru/docs/ru/gigachat/tariffs/individual-tariffs)).

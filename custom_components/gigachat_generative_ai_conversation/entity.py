@@ -478,6 +478,10 @@ def _estimate_gigachat_cost_rub(
             return (in_tok * 198.86 + out_tok * 829.6) / 1_000_000.0
         if "minimax-m3" in m_lower:
             return (in_tok * 240.22 + out_tok * 1008.85) / 1_000_000.0
+        if "gpt-oss-120b" in m_lower:
+            return (in_tok * 15.86 + out_tok * 61.0) / 1_000_000.0
+        if "qwen3-coder-next" in m_lower:
+            return (in_tok * 122.0 + out_tok * 244.0) / 1_000_000.0
         return total_tokens * 100.0 / 1_000_000.0
 
     if "ultra" in m_lower:
