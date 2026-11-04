@@ -168,6 +168,8 @@ class GigaChatSubentryUsageSensor(RestoreSensor):
             self._extra_attrs["last_request_tokens"] = int(data.get("tokens", 0))
         if "model" in data:
             self._extra_attrs["last_model"] = data["model"]
+        if "sber_balance" in data and isinstance(data["sber_balance"], dict):
+            self._extra_attrs["sber_freemium_balance"] = data["sber_balance"]
 
         self.async_write_ha_state()
 

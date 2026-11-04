@@ -660,6 +660,49 @@ class GigaChatBaseLLMEntity(Entity):
                 f"Ошибка соединения с Sber OAuth: {err}"
             ) from err
 
+    async def async_get_sber_balance(self, token: str) -> dict[str, int]:
+        """Fetch remaining token quotas from Sber Studio GET /api/v1/balance (cached for 5 min)."""
+        if not self.auth_key or not token:
+            return {}
+        now = time.time()
+        balance_store: dict[str, Any] = {}
+        if self.hass is not None:
+            domain_data = self.hass.data.setdefault(DOMAIN, {})
+            balance_store = domain_data.setdefault("_sber_balance", {})
+            if (
+                balance_store.get("data")
+                and float(balance_store.get("expires_at", 0)) > now
+            ):
+                return dict(balance_store["data"])
+
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
+                    f"{GIGACHAT_BASE_URL}/balance",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/json",
+                    },
+                    ssl=self.verify_ssl,
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as resp,
+            ):
+                if resp.status == 200:
+                    payload = await resp.json()
+                    items = payload.get("balance") or []
+                    result: dict[str, int] = {}
+                    for item in items:
+                        if isinstance(item, dict) and item.get("usage"):
+                            result[str(item["usage"])] = int(item.get("value", 0) or 0)
+                    if self.hass is not None and result:
+                        balance_store["data"] = result
+                        balance_store["expires_at"] = now + 300
+                    return result
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.debug("Could not fetch Sber Studio token balance: %s", err)
+        return {}
+
     async def _async_handle_cloud_ru_chat_log(
         self,
         chat_log: conversation.ChatLog,
@@ -938,16 +981,37 @@ class GigaChatBaseLLMEntity(Entity):
                 }
 
             token = await self.async_get_access_token(is_speech=False)
+            sber_balance = await self.async_get_sber_balance(token)
 
-            candidate_models = [model_name]
+            def _quota_for(cand: str) -> int:
+                if not sber_balance:
+                    return 1
+                cl = cand.lower()
+                if "ultra" in cl:
+                    return sber_balance.get("GigaChat-3-Ultra", 1)
+                if "max" in cl:
+                    return sber_balance.get("GigaChat-Max", 1)
+                if "pro" in cl:
+                    return sber_balance.get("GigaChat-Pro", 1)
+                return sber_balance.get("GigaChat", 1)
+
+            raw_candidates = [model_name]
             for fallback in (
-                "GigaChat-2-Max",
                 "GigaChat-2-Pro",
+                "GigaChat-3-Ultra",
+                "GigaChat-2-Max",
                 "GigaChat-2",
                 "GigaChat",
             ):
-                if fallback not in candidate_models:
-                    candidate_models.append(fallback)
+                if fallback not in raw_candidates:
+                    raw_candidates.append(fallback)
+
+            if is_recommended and sber_balance:
+                with_quota = [c for c in raw_candidates if _quota_for(c) > 0]
+                without_quota = [c for c in raw_candidates if _quota_for(c) <= 0]
+                candidate_models = with_quota + without_quota
+            else:
+                candidate_models = raw_candidates
 
             res_data: dict[str, Any] | None = None
             last_status = 0
@@ -1041,16 +1105,19 @@ class GigaChatBaseLLMEntity(Entity):
                     tot_tokens = in_tokens + out_tokens
                     cost_rub = _estimate_gigachat_cost_rub(used_model, tot_tokens)
                     if self.hass is not None:
+                        usage_event: dict[str, Any] = {
+                            "tokens": tot_tokens,
+                            "input_tokens": in_tokens,
+                            "output_tokens": out_tokens,
+                            "cost_rub": cost_rub,
+                            "model": used_model,
+                        }
+                        if sber_balance:
+                            usage_event["sber_balance"] = sber_balance
                         async_dispatcher_send(
                             self.hass,
                             f"{DOMAIN}_usage_{self.subentry.subentry_id}",
-                            {
-                                "tokens": tot_tokens,
-                                "input_tokens": in_tokens,
-                                "output_tokens": out_tokens,
-                                "cost_rub": cost_rub,
-                                "model": used_model,
-                            },
+                            usage_event,
                         )
 
                     message = choices[0].get("message", {})
