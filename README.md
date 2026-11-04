@@ -17,7 +17,7 @@
 
 1. 💬 **Диалоговая система (`GigaChat Conversation`)** на базе **GigaChat 2 Pro / Max / Lite** и **GigaChat 3 Pro / Ultra / 3.5 Reasoning** с полноценным управлением умным домом (Native Function Calling).
 2. 🎙 **Распознавание речи (`GigaASR / SaluteSpeech STT`)** — гибридное распознавание голоса через **Cloud.ru (`GigaChat/GigaASR`, `openai/whisper-large-v3`)**, мультимодальный **Sber Studio GigaChat Audio STT** или прямой **SaluteSpeech API**.
-3. 🔊 **Синтез речи (`SaluteSpeech TTS`)** — живая озвучка ответов через **Cloud.ru Realtime WebSocket (`GigaChat/SaluteSpeech`, голос `Bab-Freespeech`)** или классический **SaluteSpeech API** (*Наталья, Борис, Марфа, Тарас, Александра, Сергей, Kira*).
+3. 🔊 **Синтез речи (`SaluteSpeech TTS`)** — живая озвучка ответов через **Cloud.ru Realtime WebSocket (`GigaChat/SaluteSpeech` — 9 голосов 24 кГц: `Bab-Freespeech`, `Bab-Energetic`, `Bab-Debate`, `Mer-Operator`, `Kaz-Lifelike`, `Tsb-Freespeech`, `Tsb-Hesitating`, `Gli-Freespeech`, `Gli-Operator`)** или классический **SaluteSpeech API** (*Наталья, Борис, Марфа, Тарас, Александра, Сергей, Kira*).
 4. 🧠 **Задача ИИ — текст, данные и Vision (`GigaChat AI Task`)** — генерация текста, структурированных JSON-данных и **мультимодальный анализ изображений и камер (`GigaChat Vision`)** — штатный аналог `llmvision.image_analyzer`.
 5. 🎨 **Задача ИИ — генерация изображений (`GigaChat AI Task image`)** — создание изображений на базе встроенной нейросети **Kandinsky 3.1 (`text2image`)** через GigaChat API.
 
@@ -82,7 +82,7 @@
 
 | Поле в настройках Home Assistant | Где получить ключ | Статус поля | За какие службы и функции отвечает |
 | :--- | :--- | :--- | :--- |
-| **1. API-ключ Cloud.ru Foundation Models** | `Key Secret` сервисного аккаунта в [console.cloud.ru](https://console.cloud.ru) | **Основной ключ #1** *(рекомендуется)* | • 🔊 **Синтез речи (`SaluteSpeech TTS`)** через WebSocket `/v1/realtime` (`GigaChat/SaluteSpeech`, голос `Bab-Freespeech`).<br>• 💬 Модели `[Cloud.ru]` (`GigaChat-3-Pro`, `GigaChat 3.5 Reasoning`, `GigaChat 3 10B`), 🎙 распознавание речи `GigaASR` / `Whisper` и 👁 Vision `Qwen3.6` / `Kimi-K2.6`. |
+| **1. API-ключ Cloud.ru Foundation Models** | `Key Secret` сервисного аккаунта в [console.cloud.ru](https://console.cloud.ru) | **Основной ключ #1** *(рекомендуется)* | • 🔊 **Синтез речи (`SaluteSpeech TTS`)** через WebSocket `/v1/realtime` (`GigaChat/SaluteSpeech` — 9 голосов: `Bab-Freespeech`, `Bab-Energetic`, `Bab-Debate`, `Mer-Operator`, `Kaz-Lifelike`, `Tsb-Freespeech`, `Tsb-Hesitating`, `Gli-Freespeech`, `Gli-Operator`).<br>• 💬 Модели `[Cloud.ru]` (`GigaChat-3-Pro`, `GigaChat 3.5 Reasoning`, `GigaChat 3 10B`), 🎙 распознавание речи `GigaASR` / `Whisper` и 👁 Vision `Qwen3.6` / `Kimi-K2.6`. |
 | **2. Ключ авторизации GigaChat в Sber Studio *(опционально)*** | `Authorization Key` (Base64) в проекте `GigaChat API` на [developers.sber.ru/studio](https://developers.sber.ru/studio) | **Опциональный ключ #1** *(рекомендуется указывать в паре с Полем 1)* | Обеспечивает работу через API Sber Studio и служит автоматическим резервом (фоллбэком) для Cloud.ru:<br>• 💬 **Диалоги и управление умным домом** (`GigaChat-2-Pro`, `GigaChat-3-Ultra`, `GigaChat-2-Max`, `GigaChat-2`);<br>• 🎙 **Распознавание голоса (`GigaChat Audio STT`)** через мультимодальный вход `/api/v1/files`;<br>• 👁 **Vision-анализ камер (`GigaChat AI Task`)**;<br>• 🎨 **Генерация картинок Kandinsky 3.1 (`GigaChat AI Task image`)** *(доступна только по этому ключу)*. |
 | **3. Архивный ключ SaluteSpeech в Sber Studio *(опционально)*** | `Authorization Key` (Base64) от старого проекта `SaluteSpeech` в `developers.sber.ru` | **Опциональный ключ #2** *(оставьте ПУСТЫМ, если нет старого ключа!)* | Нужен **только** владельцам архивных проектов `SaluteSpeech` в Sber Studio для прямого доступа к `smartspeech.sber.ru` (для новых аккаунтов речевые сервисы перенесены в Cloud.ru). **Если у вас нет отдельного старого ключа SaluteSpeech — оставьте это поле пустым!** |
 
@@ -111,10 +111,13 @@
 > ⚠️ **Важное предупреждение по Полю 3 (`Архивный ключ SaluteSpeech в Sber Studio`):**
 > Не вставляйте в 3-е поле ключ от Cloud.ru или обычный ключ от GigaChat API! Сервер `smartspeech.sber.ru` принимает только старые ключи со scope `SALUTE_SPEECH_PERS`. Если вставить туда ключ от Cloud.ru, появится ошибка `400 Can't decode 'Authorization' header`. **Оставьте 3-е поле пустым.**
 
-### Как переключаться между моделями `[Sber Studio]` и `[Cloud.ru]`:
-В настройках ⚙️ службы **`GigaChat Conversation`** (или **`GigaChat AI Task`**) снимите галочку **«Рекомендуемые настройки модели»** — появится список выбора модели:
-- Модели **`[Sber Studio]`** (`GigaChat-2-Pro`, `GigaChat-3-Ultra`, `GigaChat-2-Max`, `GigaChat-2`) — работают через ключ `developers.sber.ru/studio` (Поле 2).
-- Модели **`[Cloud.ru]`** (`GigaChat/GigaChat-3-Pro`, `ai-sage/GigaChat3.5-432B-A28B-Reasoning`, `ai-sage/GigaChat3-10B-A1.8B`, `Qwen/Qwen3.6-35B-A3B`) — работают через ключ **Cloud.ru Evolution** (Поле 1; при необходимости интеграция автоматически резервирует запрос через Поле 2).
+### Как переключаться между моделями `[Sber Studio]` и `[Cloud.ru]` (и голосами TTS):
+- В настройках интеграции автоматически отображаются **только те модели и голоса, для которых активирован соответствующий API-ключ**:
+  - Если заполнены **Поле 1 (`Cloud.ru`) + Поле 2 (`Sber Studio`)**, а **Поле 3 (`Архивный ключ SaluteSpeech`)** оставлено пустым — в службе **`SaluteSpeech TTS`** используется модель **`GigaChat/SaluteSpeech [Cloud.ru]`**, а в настройках Голосового помощника (**Assist -> Голос**) доступны все **9 голосов Cloud.ru (24 кГц)**: `Bab-Freespeech`, `Bab-Energetic`, `Bab-Debate`, `Mer-Operator`, `Kaz-Lifelike`, `Tsb-Freespeech`, `Tsb-Hesitating`, `Gli-Freespeech`, `Gli-Operator`.
+  - Если дополнительно заполнен архивный ключ в **Поле 3**, в настройках ⚙️ службы `SaluteSpeech TTS` можно переключить модель синтеза на **`SaluteSpeech Classic [Sber Studio]`** — тогда в Голосовом помощнике появятся классические голоса `smartspeech.sber.ru` (*Наталья, Борис, Марфа, Тарас, Александра, Сергей, Kira*).
+- В настройках ⚙️ службы **`GigaChat Conversation`** (или **`GigaChat AI Task`**) снимите галочку **«Рекомендуемые настройки модели»** — появится список выбора модели:
+  - Модели **`[Sber Studio]`** (`GigaChat-2-Pro`, `GigaChat-3-Ultra`, `GigaChat-2-Max`, `GigaChat-2`) — работают через ключ `developers.sber.ru/studio` (Поле 2).
+  - Модели **`[Cloud.ru]`** (`GigaChat/GigaChat-3-Pro`, `ai-sage/GigaChat3.5-432B-A28B-Reasoning`, `ai-sage/GigaChat3-10B-A1.8B`, `Qwen/Qwen3.6-35B-A3B`) — работают через ключ **Cloud.ru Evolution** (Поле 1; при необходимости интеграция автоматически резервирует запрос через Поле 2).
 
 ### 💰 Тарифы Sber Studio для физлиц и особенности расчёта счётчиков затрат
 

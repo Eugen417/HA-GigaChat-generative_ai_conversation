@@ -5,7 +5,7 @@
 Интеграция **Sber GigaChat AI** для Home Assistant поддерживает **оба ключа одновременно (гибридный режим)**:
 
 1. 🌟 **Поле 1 — API-ключ Cloud.ru Evolution Foundation Models (`Key Secret`)**
-   - Обеспечивает работу **синтеза речи (`SaluteSpeech TTS`)** через WebSocket `/v1/realtime` (`GigaChat/SaluteSpeech`, голос `Bab-Freespeech`).
+   - Обеспечивает работу **синтеза речи (`SaluteSpeech TTS`)** через WebSocket `/v1/realtime` (`GigaChat/SaluteSpeech` — 9 голосов 24 кГц: `Bab-Freespeech`, `Bab-Energetic`, `Bab-Debate`, `Mer-Operator`, `Kaz-Lifelike`, `Tsb-Freespeech`, `Tsb-Hesitating`, `Gli-Freespeech`, `Gli-Operator`).
    - Открывает доступ к моделям каталога Cloud.ru Foundation Models:
      - **GigaChat 3 Pro** (`GigaChat/GigaChat-3-Pro` — 73 / 176 ₽ за 1 млн токенов),
      - **GigaChat 3.5 Reasoning** (`ai-sage/GigaChat3.5-432B-A28B-Reasoning` — 96 / 288 ₽ за 1 млн токенов),
@@ -87,7 +87,7 @@
 2. Найдите **Sber GigaChat AI**.
 3. Заполните поля следующим образом:
    - **Поле 1 — «1. API-ключ Cloud.ru Foundation Models»**: вставьте сюда ваш `Key Secret` от сервисного аккаунта `home-assistant` в Cloud.ru.
-     - Через этот ключ работают синтез речи **`SaluteSpeech TTS`** (`/v1/realtime`, голос `Bab-Freespeech`) и модели каталога Cloud.ru Foundation Models.
+     - Через этот ключ работают синтез речи **`SaluteSpeech TTS`** (`/v1/realtime` — 9 голосов: `Bab-Freespeech`, `Bab-Energetic`, `Bab-Debate`, `Mer-Operator`, `Kaz-Lifelike`, `Tsb-Freespeech`, `Tsb-Hesitating`, `Gli-Freespeech`, `Gli-Operator`) и модели каталога Cloud.ru Foundation Models.
    - **Поле 2 — «2. Ключ авторизации GigaChat в Sber Studio (рекомендуется)»**: вставьте ваш `Authorization Key` (Base64) из проекта `GigaChat API` в `developers.sber.ru/studio`.
      - **Рекомендуется заполнить в паре с Полем 1!** По этому ключу работают модели Sber Studio (`GigaChat-2-Pro`, `GigaChat-3-Ultra`, `GigaChat-2`), мультимодальное распознавание голоса **GigaChat Audio STT** (автоматический резерв для Cloud.ru STT), анализ камер **Vision** и генерация картинок **Kandinsky 3.1 (`text2image`)**.
    - **Поле 3 — «3. Архивный ключ SaluteSpeech в Sber Studio»**: **оставьте полностью пустым!**
