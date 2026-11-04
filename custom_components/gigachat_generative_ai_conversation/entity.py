@@ -42,6 +42,7 @@ from .const import (
     DEFAULT_VERIFY_SSL,
     DOMAIN,
     GIGACHAT_BASE_URL,
+    GIGACHAT_ULTRA_BASE_URL,
     OAUTH_URL,
     RECOMMENDED_MAX_TOKENS,
     RECOMMENDED_TEMPERATURE,
@@ -50,14 +51,21 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 MAX_TOOL_ITERATIONS = 10
 
+_LEGACY_MODEL_MAP: dict[str, str] = {
+    "GigaChat-Pro": "GigaChat-2-Pro",
+    "GigaChat-Max": "GigaChat-2-Max",
+    "GigaChat/GigaChat-2-Max": "GigaChat/GigaChat-3-Pro",
+}
+
 _SMART_HOME_SYSTEM_ADDON = (
     "\n\nПРАВИЛА УПРАВЛЕНИЯ УМНЫМ ДОМОМ HOME ASSISTANT:\n"
     "1. В статическом списке устройств указаны только названия и комнаты, но НЕТ их текущих показаний!\n"
-    "2. При ЛЮБОМ вопросе о температуре, влажности, CO2, статусе датчиков, света или устройств "
-    "ОБЯЗАТЕЛЬНО сначала вызови функцию GetLiveContext (или homeassistant__GetLiveContext) без аргументов, "
+    "2. При вопросах пользователя о текущей погоде, температуре, влажности, CO2 или состоянии датчиков "
+    "ОБЯЗАТЕЛЬНО вызови функцию GetLiveContext (или homeassistant__GetLiveContext) без аргументов, "
     "получи текущие показания и ответь пользователю конкретным числом (например: «Температура в спальне составляет 22,1 °C»). "
     "КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО отвечать просто названием датчика (например, «Спальня Температура») и запрещено вызывать GetDateTime вместо GetLiveContext!\n"
-    "3. Для включения, выключения или изменения яркости/температуры устройств обязательно вызывай функции HassTurnOn, HassTurnOff, HassLightSet, HassClimateSetTemperature.\n"
+    "3. При командах включения, выключения или изменения яркости/температуры света и устройств («Включи...», «Выключи...», «Сделай светлее/темнее...») "
+    "ОБЯЗАТЕЛЬНО вызывай функции управления HassTurnOn, HassTurnOff, HassLightSet или HassClimateSetTemperature (никогда не говори, что включил или выключил устройство, если не вызвал функцию управления!).\n"
     "4. Никогда не вызывай одну и ту же функцию дважды подряд с одинаковыми аргументами."
 )
 
@@ -798,7 +806,8 @@ class GigaChatBaseLLMEntity(Entity):
             temperature = float(RECOMMENDED_TEMPERATURE)
             max_tokens = int(RECOMMENDED_MAX_TOKENS)
         else:
-            model_name = str(options.get(CONF_CHAT_MODEL, self.default_model))
+            raw_model = str(options.get(CONF_CHAT_MODEL, self.default_model))
+            model_name = _LEGACY_MODEL_MAP.get(raw_model, raw_model)
             temperature = float(options.get(CONF_TEMPERATURE, RECOMMENDED_TEMPERATURE))
             max_tokens = int(options.get(CONF_MAX_TOKENS, RECOMMENDED_MAX_TOKENS))
 
@@ -870,6 +879,7 @@ class GigaChatBaseLLMEntity(Entity):
 
         if "/" in model_name:
             model_name = DEFAULT_SBER_STUDIO_CHAT_MODEL
+        model_name = _LEGACY_MODEL_MAP.get(model_name, model_name)
 
         called_in_turn: set[str] = set()
         force_no_tools = False
@@ -888,14 +898,14 @@ class GigaChatBaseLLMEntity(Entity):
             token = await self.async_get_access_token(is_speech=False)
 
             candidate_models = [model_name]
-            if is_recommended:
-                for fallback in (
-                    "GigaChat-2-Pro",
-                    "GigaChat-2",
-                    "GigaChat",
-                ):
-                    if fallback not in candidate_models:
-                        candidate_models.append(fallback)
+            for fallback in (
+                "GigaChat-2-Max",
+                "GigaChat-2-Pro",
+                "GigaChat-2",
+                "GigaChat",
+            ):
+                if fallback not in candidate_models:
+                    candidate_models.append(fallback)
 
             res_data: dict[str, Any] | None = None
             last_status = 0
@@ -918,32 +928,50 @@ class GigaChatBaseLLMEntity(Entity):
                                 "none" if force_no_tools else "auto"
                             )
 
-                        for attempt in range(2):
-                            headers = {
-                                "Authorization": f"Bearer {token}",
-                                "Content-Type": "application/json",
-                                "Accept": "application/json",
-                            }
-                            async with session.post(
-                                f"{GIGACHAT_BASE_URL}/chat/completions",
-                                headers=headers,
-                                json=payload,
-                                ssl=self.verify_ssl,
-                                timeout=aiohttp.ClientTimeout(total=60),
-                            ) as resp:
-                                if resp.status == 401 and attempt == 0:
-                                    token = await self.async_get_access_token(
-                                        is_speech=False, force_refresh=True
-                                    )
-                                    continue
+                        base_urls = (
+                            (GIGACHAT_ULTRA_BASE_URL, GIGACHAT_BASE_URL)
+                            if "ultra" in candidate.lower()
+                            else (GIGACHAT_BASE_URL, GIGACHAT_ULTRA_BASE_URL)
+                        )
 
-                                if resp.status == 200:
-                                    res_data = await resp.json()
-                                    used_model = candidate
+                        for base_url in base_urls:
+                            for attempt in range(2):
+                                headers = {
+                                    "Authorization": f"Bearer {token}",
+                                    "Content-Type": "application/json",
+                                    "Accept": "application/json",
+                                }
+                                async with session.post(
+                                    f"{base_url}/chat/completions",
+                                    headers=headers,
+                                    json=payload,
+                                    ssl=self.verify_ssl,
+                                    timeout=aiohttp.ClientTimeout(total=60),
+                                ) as resp:
+                                    if resp.status == 401 and attempt == 0:
+                                        token = await self.async_get_access_token(
+                                            is_speech=False, force_refresh=True
+                                        )
+                                        continue
+
+                                    if resp.status == 200:
+                                        res_data = await resp.json()
+                                        used_model = candidate
+                                        if candidate != model_name:
+                                            _LOGGER.warning(
+                                                "Selected model %s was unavailable (%s); "
+                                                "automatically used fallback model %s",
+                                                model_name,
+                                                last_status,
+                                                used_model,
+                                            )
+                                        break
+
+                                    last_status = resp.status
+                                    last_err = await resp.text()
                                     break
 
-                                last_status = resp.status
-                                last_err = await resp.text()
+                            if res_data is not None or last_status != 404:
                                 break
 
                         if res_data is not None:
@@ -1020,8 +1048,6 @@ class GigaChatBaseLLMEntity(Entity):
                             if state_id:
                                 self._functions_state_ids[ti.id] = str(state_id)
                             tool_calls.append(ti)
-                            if "GetLiveContext" in str(func_name):
-                                force_no_tools = True
 
                     assistant_content = conversation.AssistantContent(
                         agent_id=self.entity_id,

@@ -87,13 +87,10 @@ CHAT_MODELS = [
     "GigaChat-3-Ultra",
     "GigaChat-2-Max",
     "GigaChat-2",
-    "GigaChat-Pro",
-    "GigaChat-Max",
     "GigaChat",
     "GigaChat/GigaChat-3-Pro",
     "ai-sage/GigaChat3.5-432B-A28B-Reasoning",
     "ai-sage/GigaChat3-10B-A1.8B",
-    "GigaChat/GigaChat-2-Max",
     "Qwen/Qwen3.6-35B-A3B",
     "Qwen/Qwen3.5-397B-A17B",
     "moonshotai/Kimi-K2.6",
@@ -106,7 +103,6 @@ CHAT_MODEL_LABELS: dict[str, str] = {
     "GigaChat/GigaChat-3-Pro": "GigaChat 3 Pro [Cloud.ru] (73 / 176 ₽ за 1M — рекомендуется для УД)",
     "ai-sage/GigaChat3.5-432B-A28B-Reasoning": "GigaChat 3.5 432B Reasoning [Cloud.ru] (96 / 288 ₽ за 1M — флагман)",
     "ai-sage/GigaChat3-10B-A1.8B": "GigaChat 3 10B [Cloud.ru] (12.2 ₽ за 1M — сверхбыстрая и дешёвая)",
-    "GigaChat/GigaChat-2-Max": "GigaChat 2 Max [Cloud.ru] (569 ₽ за 1M)",
     "Qwen/Qwen3.6-35B-A3B": "Qwen 3.6 35B Vision [Cloud.ru] (220 / 329 ₽ за 1M — Vision и УД)",
     "Qwen/Qwen3.5-397B-A17B": "Qwen 3.5 397B Vision [Cloud.ru] (анализ камер и УД)",
     "moonshotai/Kimi-K2.6": "Kimi K2.6 Vision [Cloud.ru] (анализ камер и УД)",
@@ -117,8 +113,6 @@ CHAT_MODEL_LABELS: dict[str, str] = {
     "GigaChat-2-Pro": "GigaChat 2 Pro [Sber Studio] (0.50 ₽ / 1K, Freemium 40M — УД и Vision)",
     "GigaChat-2-Max": "GigaChat 2 Max [Sber Studio] (0.65 ₽ / 1K, Freemium 25M — макс. точность и Vision)",
     "GigaChat-2": "GigaChat 2 Lite [Sber Studio] (0.065 ₽ / 1K, Freemium 250M)",
-    "GigaChat-Pro": "GigaChat Pro [Sber Studio] (0.50 ₽ / 1K, Freemium 40M)",
-    "GigaChat-Max": "GigaChat Max [Sber Studio] (0.65 ₽ / 1K, Freemium 25M)",
     "GigaChat": "GigaChat Lite [Sber Studio] (0.065 ₽ / 1K, Freemium 250M)",
 }
 
@@ -126,7 +120,6 @@ IMAGE_MODELS = [
     "GigaChat-2-Pro",
     "GigaChat-2-Max",
     "GigaChat-2",
-    "GigaChat-Pro",
     "GigaChat",
 ]
 
@@ -134,7 +127,6 @@ IMAGE_MODEL_LABELS: dict[str, str] = {
     "GigaChat-2-Pro": "Kandinsky 3.1 через GigaChat 2 Pro [Sber Studio]",
     "GigaChat-2-Max": "Kandinsky 3.1 через GigaChat 2 Max [Sber Studio]",
     "GigaChat-2": "Kandinsky 3.1 через GigaChat 2 Lite [Sber Studio]",
-    "GigaChat-Pro": "Kandinsky 3.1 через GigaChat Pro [Sber Studio]",
     "GigaChat": "Kandinsky 3.1 через GigaChat Lite [Sber Studio]",
 }
 
@@ -208,6 +200,7 @@ RECOMMENDED_AI_TASK_IMAGE_OPTIONS: dict[str, Any] = {
 CLOUD_RU_BASE_URL = "https://foundation-models.api.cloud.ru/v1"
 OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
 GIGACHAT_BASE_URL = "https://gigachat.devices.sberbank.ru/api/v1"
+GIGACHAT_ULTRA_BASE_URL = "https://api.giga.chat/v1"
 SALUTE_SPEECH_TTS_URL = "https://smartspeech.sber.ru/rest/v1/text:synthesize"
 SALUTE_SPEECH_STT_URL = "https://smartspeech.sber.ru/rest/v1/speech:recognize"
 

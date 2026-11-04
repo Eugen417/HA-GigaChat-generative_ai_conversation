@@ -489,8 +489,6 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
                     "GigaChat-2-Pro",
                     "GigaChat-2-Max",
                     "GigaChat-2",
-                    "GigaChat-Pro",
-                    "GigaChat-Max",
                     "GigaChat",
                 ):
                     if candidate_model not in vision_candidates:
