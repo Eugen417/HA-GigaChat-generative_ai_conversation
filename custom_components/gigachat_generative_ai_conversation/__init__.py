@@ -96,10 +96,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if sub.subentry_type == "conversation":
                 new_data = dict(sub.data)
                 api_val = new_data.get(CONF_LLM_HASS_API)
-                if api_val in ("none", ["none"]) or (
-                    isinstance(api_val, list) and len(api_val) > 1
-                ):
+                if api_val in ("none", ["none"]):
                     new_data[CONF_LLM_HASS_API] = [llm.LLM_API_ASSIST]
+                    hass.config_entries.async_update_subentry(
+                        entry, sub, data=new_data
+                    )
+                elif isinstance(api_val, str):
+                    new_data[CONF_LLM_HASS_API] = [api_val]
                     hass.config_entries.async_update_subentry(
                         entry, sub, data=new_data
                     )
