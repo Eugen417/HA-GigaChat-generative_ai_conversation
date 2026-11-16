@@ -33,6 +33,7 @@ from homeassistant.util.json import json_loads
 from .const import (
     CLOUD_RU_BASE_URL,
     CONF_AUTH_KEY,
+    CONF_AUTO_FALLBACK,
     CONF_CHAT_MODEL,
     CONF_CLOUD_RU_API_KEY,
     CONF_IMAGE_MODEL,
@@ -615,6 +616,11 @@ class GigaChatBaseLLMEntity(Entity):
         """Return the latest subentry from the config entry."""
         return self.entry.subentries.get(self._subentry_id, self._subentry)
 
+    @property
+    def auto_fallback(self) -> bool:
+        """Return True if user explicitly enabled automatic model switching."""
+        return bool(self.subentry.data.get(CONF_AUTO_FALLBACK, False))
+
     def _get_http_session(self, *, use_sber_ssl: bool = False) -> aiohttp.ClientSession:
         """Return the shared Home Assistant aiohttp ClientSession."""
         verify = self.verify_ssl if use_sber_ssl else True
@@ -773,13 +779,14 @@ class GigaChatBaseLLMEntity(Entity):
             else "GigaChat/GigaChat-3-Pro"
         )
         candidates = [cloud_model]
-        for fb in (
-            "GigaChat/GigaChat-3-Pro",
-            "ai-sage/GigaChat3-10B-A1.8B",
-            "ai-sage/GigaChat3.5-432B-A28B-Reasoning",
-        ):
-            if fb not in candidates:
-                candidates.append(fb)
+        if self.auto_fallback:
+            for fb in (
+                "GigaChat/GigaChat-3-Pro",
+                "ai-sage/GigaChat3-10B-A1.8B",
+                "ai-sage/GigaChat3.5-432B-A28B-Reasoning",
+            ):
+                if fb not in candidates:
+                    candidates.append(fb)
 
         headers = {
             "Authorization": f"Bearer {self.cloud_ru_api_key}",
@@ -987,7 +994,7 @@ class GigaChatBaseLLMEntity(Entity):
             except HomeAssistantError as err:
                 if "402" in str(err) or "Not enough money" in str(err):
                     self._cloud_ru_exhausted = True
-                if self.auth_key:
+                if self.auth_key and self.auto_fallback:
                     _LOGGER.warning(
                         "Cloud.ru request for model %s failed (%s); "
                         "automatically falling back to Sber Studio key",
@@ -1047,17 +1054,18 @@ class GigaChatBaseLLMEntity(Entity):
                 return sber_balance.get("GigaChat", 1)
 
             raw_candidates = [model_name]
-            for fallback in (
-                "GigaChat-2-Pro",
-                "GigaChat-3-Ultra",
-                "GigaChat-2-Max",
-                "GigaChat-2",
-                "GigaChat",
-            ):
-                if fallback not in raw_candidates:
-                    raw_candidates.append(fallback)
+            if self.auto_fallback:
+                for fallback in (
+                    "GigaChat-2-Pro",
+                    "GigaChat-3-Ultra",
+                    "GigaChat-2-Max",
+                    "GigaChat-2",
+                    "GigaChat",
+                ):
+                    if fallback not in raw_candidates:
+                        raw_candidates.append(fallback)
 
-            if is_recommended and sber_balance:
+            if self.auto_fallback and sber_balance:
                 with_quota = [c for c in raw_candidates if _quota_for(c) > 0]
                 without_quota = [c for c in raw_candidates if _quota_for(c) <= 0]
                 candidate_models = with_quota + without_quota
@@ -1068,7 +1076,7 @@ class GigaChatBaseLLMEntity(Entity):
                 (len(str(m.get("content") or "")) for m in messages),
                 default=0,
             )
-            if max_msg_chars > 8000:
+            if self.auto_fallback and max_msg_chars > 8000:
                 gen2_plus = [
                     c
                     for c in candidate_models
@@ -1172,87 +1180,87 @@ class GigaChatBaseLLMEntity(Entity):
                         f"Ошибка API GigaChat ({last_status}): {last_err}"
                     )
 
-                    choices = res_data.get("choices", [])
-                    if not choices:
-                        raise HomeAssistantError("Пустой ответ от GigaChat")
+                choices = res_data.get("choices", [])
+                if not choices:
+                    raise HomeAssistantError("Пустой ответ от GigaChat")
 
-                    usage = res_data.get("usage", {})
-                    in_tokens = int(usage.get("prompt_tokens", 0) or 0) + int(
-                        usage.get("precached_prompt_tokens", 0) or 0
+                usage = res_data.get("usage", {})
+                in_tokens = int(usage.get("prompt_tokens", 0) or 0) + int(
+                    usage.get("precached_prompt_tokens", 0) or 0
+                )
+                out_tokens = int(usage.get("completion_tokens", 0) or 0)
+                tot_tokens = in_tokens + out_tokens
+                cost_rub = _estimate_gigachat_cost_rub(used_model, tot_tokens)
+                if self.hass is not None:
+                    usage_event: dict[str, Any] = {
+                        "tokens": tot_tokens,
+                        "input_tokens": in_tokens,
+                        "output_tokens": out_tokens,
+                        "cost_rub": cost_rub,
+                        "model": used_model,
+                    }
+                    if sber_balance:
+                        usage_event["sber_balance"] = sber_balance
+                    async_dispatcher_send(
+                        self.hass,
+                        f"{DOMAIN}_usage_{self.subentry.subentry_id}",
+                        usage_event,
                     )
-                    out_tokens = int(usage.get("completion_tokens", 0) or 0)
-                    tot_tokens = in_tokens + out_tokens
-                    cost_rub = _estimate_gigachat_cost_rub(used_model, tot_tokens)
-                    if self.hass is not None:
-                        usage_event: dict[str, Any] = {
-                            "tokens": tot_tokens,
-                            "input_tokens": in_tokens,
-                            "output_tokens": out_tokens,
-                            "cost_rub": cost_rub,
-                            "model": used_model,
-                        }
-                        if sber_balance:
-                            usage_event["sber_balance"] = sber_balance
-                        async_dispatcher_send(
-                            self.hass,
-                            f"{DOMAIN}_usage_{self.subentry.subentry_id}",
-                            usage_event,
-                        )
 
-                    message = choices[0].get("message", {})
-                    state_id = message.get("functions_state_id")
-                    tool_calls: list[llm.ToolInput] = []
-                    if not force_no_tools and (
-                        func_call := message.get("function_call")
-                    ):
-                        raw_args = func_call.get("arguments", {})
-                        if isinstance(raw_args, str):
-                            try:
-                                parsed_args = (
-                                    json_loads(raw_args) if raw_args.strip() else {}
-                                )
-                                tool_args = (
-                                    parsed_args
-                                    if isinstance(parsed_args, dict)
-                                    else {}
-                                )
-                            except Exception:  # noqa: BLE001
-                                tool_args = {}
-                        elif isinstance(raw_args, dict):
-                            tool_args = raw_args
-                        else:
-                            tool_args = {}
-
-                        if func_name := func_call.get("name"):
-                            sig = f"{func_name}:{json_dumps(tool_args)}"
-                            if sig in called_in_turn:
-                                force_no_tools = True
-                                continue
-                            called_in_turn.add(sig)
-                            ti = llm.ToolInput(
-                                tool_name=str(func_name),
-                                tool_args=tool_args,
+                message = choices[0].get("message", {})
+                state_id = message.get("functions_state_id")
+                tool_calls: list[llm.ToolInput] = []
+                if not force_no_tools and (
+                    func_call := message.get("function_call")
+                ):
+                    raw_args = func_call.get("arguments", {})
+                    if isinstance(raw_args, str):
+                        try:
+                            parsed_args = (
+                                json_loads(raw_args) if raw_args.strip() else {}
                             )
-                            if state_id:
-                                self._functions_state_ids[ti.id] = str(state_id)
-                            tool_calls.append(ti)
+                            tool_args = (
+                                parsed_args
+                                if isinstance(parsed_args, dict)
+                                else {}
+                            )
+                        except Exception:  # noqa: BLE001
+                            tool_args = {}
+                    elif isinstance(raw_args, dict):
+                        tool_args = raw_args
+                    else:
+                        tool_args = {}
 
-                    assistant_content = conversation.AssistantContent(
-                        agent_id=self.entity_id,
-                        content=message.get("content") or None,
-                        tool_calls=tool_calls or None,
-                    )
-                    _LOGGER.info(
-                        "GigaChat LLM [%s] tokens=%s tool_calls=%s text=%s",
-                        used_model,
-                        tot_tokens,
-                        [tc.tool_name for tc in tool_calls],
-                        (message.get("content") or "")[:120],
-                    )
-                    async for _ in chat_log.async_add_assistant_content(
-                        assistant_content
-                    ):
-                        pass
+                    if func_name := func_call.get("name"):
+                        sig = f"{func_name}:{json_dumps(tool_args)}"
+                        if sig in called_in_turn:
+                            force_no_tools = True
+                            continue
+                        called_in_turn.add(sig)
+                        ti = llm.ToolInput(
+                            tool_name=str(func_name),
+                            tool_args=tool_args,
+                        )
+                        if state_id:
+                            self._functions_state_ids[ti.id] = str(state_id)
+                        tool_calls.append(ti)
+
+                assistant_content = conversation.AssistantContent(
+                    agent_id=self.entity_id,
+                    content=message.get("content") or None,
+                    tool_calls=tool_calls or None,
+                )
+                _LOGGER.info(
+                    "GigaChat LLM [%s] tokens=%s tool_calls=%s text=%s",
+                    used_model,
+                    tot_tokens,
+                    [tc.tool_name for tc in tool_calls],
+                    (message.get("content") or "")[:120],
+                )
+                async for _ in chat_log.async_add_assistant_content(
+                    assistant_content
+                ):
+                    pass
 
             except HomeAssistantError:
                 raise

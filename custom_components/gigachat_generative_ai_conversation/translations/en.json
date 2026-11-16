@@ -52,13 +52,15 @@
             "prompt": "Instructions",
             "llm_hass_api": "AI tools",
             "recommended": "Recommended model settings",
+            "auto_fallback": "Automatic fallback between models",
             "chat_model": "Model",
             "temperature": "Temperature",
             "max_tokens": "Maximum tokens to return in response"
           },
           "data_description": {
             "prompt": "Instruct how the LLM should respond. This can be a template.",
-            "llm_hass_api": "**Device control** only gives access to entities that you expose to voice assistants. **Home Assistant** has access to everything and only works for admins, not voice assistant devices."
+            "llm_hass_api": "**Device control** only gives access to entities that you expose to voice assistants. **Home Assistant** has access to everything and only works for admins, not voice assistant devices.",
+            "auto_fallback": "Allow automatic switching to a fallback model if the selected model runs out of quota or returns an error. Disabled by default."
           }
         }
       }
@@ -115,9 +117,13 @@
           "data": {
             "name": "Name",
             "recommended": "Recommended model settings",
+            "auto_fallback": "Automatic fallback between models",
             "chat_model": "Text/Vision Model",
             "temperature": "Temperature",
             "max_tokens": "Maximum tokens to return in response"
+          },
+          "data_description": {
+            "auto_fallback": "Allow automatic switching to a fallback model if the selected model runs out of quota or returns an error. Disabled by default."
           }
         }
       }
@@ -136,7 +142,11 @@
           "data": {
             "name": "Name",
             "recommended": "Recommended model settings",
+            "auto_fallback": "Automatic fallback between models",
             "image_model": "Image Generation Model (Kandinsky via GigaChat)"
+          },
+          "data_description": {
+            "auto_fallback": "Allow automatic switching to a fallback model if the selected model runs out of quota or returns an error. Disabled by default."
           }
         }
       }

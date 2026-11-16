@@ -364,15 +364,18 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
             k in self.model.lower() for k in ("qwen", "kimi", "minimax")
         ):
             cloud_vision_candidates.append(self.model)
-        for candidate_model in (
-            DEFAULT_VISION_MODEL,
-            "Qwen/Qwen3.6-35B-A3B",
-            "Qwen/Qwen3.5-397B-A17B",
-            "moonshotai/Kimi-K2.6",
-            "MiniMaxAI/MiniMax-M3",
-        ):
-            if candidate_model not in cloud_vision_candidates:
-                cloud_vision_candidates.append(candidate_model)
+        else:
+            cloud_vision_candidates.append(DEFAULT_VISION_MODEL)
+        if self.auto_fallback:
+            for candidate_model in (
+                DEFAULT_VISION_MODEL,
+                "Qwen/Qwen3.6-35B-A3B",
+                "Qwen/Qwen3.5-397B-A17B",
+                "moonshotai/Kimi-K2.6",
+                "MiniMaxAI/MiniMax-M3",
+            ):
+                if candidate_model not in cloud_vision_candidates:
+                    cloud_vision_candidates.append(candidate_model)
 
         last_status = 0
         last_err = ""
@@ -486,15 +489,18 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
                 vision_candidates: list[str] = []
                 if "/" not in self.model and "ultra" not in self.model.lower():
                     vision_candidates.append(self.model)
-                for candidate_model in (
-                    DEFAULT_SBER_VISION_MODEL,
-                    "GigaChat-2-Pro",
-                    "GigaChat-2-Max",
-                    "GigaChat-2",
-                    "GigaChat",
-                ):
-                    if candidate_model not in vision_candidates:
-                        vision_candidates.append(candidate_model)
+                else:
+                    vision_candidates.append(DEFAULT_SBER_VISION_MODEL)
+                if self.auto_fallback:
+                    for candidate_model in (
+                        DEFAULT_SBER_VISION_MODEL,
+                        "GigaChat-2-Pro",
+                        "GigaChat-2-Max",
+                        "GigaChat-2",
+                        "GigaChat",
+                    ):
+                        if candidate_model not in vision_candidates:
+                            vision_candidates.append(candidate_model)
 
                 res_data = None
                 used_model = DEFAULT_SBER_VISION_MODEL
@@ -937,9 +943,10 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
 
         token = await self.async_get_access_token(is_speech=False)
         candidates = [image_model]
-        for fallback in ("GigaChat-2-Pro", "GigaChat-2", "GigaChat"):
-            if fallback not in candidates:
-                candidates.append(fallback)
+        if self.auto_fallback:
+            for fallback in ("GigaChat-2-Pro", "GigaChat-2", "GigaChat"):
+                if fallback not in candidates:
+                    candidates.append(fallback)
 
         try:
             session = self._get_http_session(use_sber_ssl=True)

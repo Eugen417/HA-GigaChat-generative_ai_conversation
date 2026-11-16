@@ -38,6 +38,7 @@ from .const import (
     CHAT_MODELS,
     CLOUD_RU_BASE_URL,
     CONF_AUTH_KEY,
+    CONF_AUTO_FALLBACK,
     CONF_CHAT_MODEL,
     CONF_CLOUD_RU_API_KEY,
     CONF_IMAGE_MODEL,
@@ -543,6 +544,10 @@ def _gigachat_config_option_schema(
                     CONF_RECOMMENDED,
                     default=options.get(CONF_RECOMMENDED, True),
                 ): BooleanSelector(),
+                vol.Optional(
+                    CONF_AUTO_FALLBACK,
+                    default=options.get(CONF_AUTO_FALLBACK, False),
+                ): BooleanSelector(),
             }
         )
         if not options.get(CONF_RECOMMENDED, True):
@@ -656,6 +661,10 @@ def _gigachat_config_option_schema(
                     CONF_RECOMMENDED,
                     default=options.get(CONF_RECOMMENDED, True),
                 ): BooleanSelector(),
+                vol.Optional(
+                    CONF_AUTO_FALLBACK,
+                    default=options.get(CONF_AUTO_FALLBACK, False),
+                ): BooleanSelector(),
             }
         )
         if not options.get(CONF_RECOMMENDED, True):
@@ -695,6 +704,10 @@ def _gigachat_config_option_schema(
                 vol.Optional(
                     CONF_RECOMMENDED,
                     default=options.get(CONF_RECOMMENDED, True),
+                ): BooleanSelector(),
+                vol.Optional(
+                    CONF_AUTO_FALLBACK,
+                    default=options.get(CONF_AUTO_FALLBACK, False),
                 ): BooleanSelector(),
             }
         )
