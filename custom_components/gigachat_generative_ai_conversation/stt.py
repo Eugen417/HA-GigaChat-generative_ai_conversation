@@ -1,8 +1,6 @@
 """Speech to text support for Sber GigaChat AI (SaluteSpeech STT)."""
 
 from collections.abc import AsyncIterable
-import base64
-import json
 import logging
 import struct
 
@@ -180,7 +178,8 @@ class SaluteSpeechSTTEntity(SpeechToTextEntity, GigaChatBaseLLMEntity):
             ext = "ogg" if is_ogg else "wav"
             mime = "audio/ogg" if is_ogg else "audio/wav"
             try:
-                async with aiohttp.ClientSession() as session:
+                session = self._get_http_session(use_sber_ssl=False)
+                if True:
                     for cloud_model in candidates:
                         form = aiohttp.FormData()
                         form.add_field(
@@ -272,17 +271,15 @@ class SaluteSpeechSTTEntity(SpeechToTextEntity, GigaChatBaseLLMEntity):
                 "Content-Type": content_type,
                 "Accept": "application/json",
             }
-            async with (
-                aiohttp.ClientSession() as session,
-                session.post(
-                    SALUTE_SPEECH_STT_URL,
-                    headers=headers,
-                    params=params,
-                    data=payload_bytes,
-                    ssl=self.verify_ssl,
-                    timeout=aiohttp.ClientTimeout(total=30),
-                ) as resp,
-            ):
+            session = self._get_http_session(use_sber_ssl=True)
+            async with session.post(
+                SALUTE_SPEECH_STT_URL,
+                headers=headers,
+                params=params,
+                data=payload_bytes,
+                ssl=self.verify_ssl,
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as resp:
                 if resp.status == 200:
                     res = await resp.json()
                     raw_result = res.get("result", "")
@@ -330,7 +327,8 @@ class SaluteSpeechSTTEntity(SpeechToTextEntity, GigaChatBaseLLMEntity):
         file_id: str | None = None
 
         try:
-            async with aiohttp.ClientSession() as session:
+            session = self._get_http_session(use_sber_ssl=True)
+            if True:
                 form = aiohttp.FormData()
                 form.add_field(
                     "file",
@@ -440,84 +438,4 @@ class SaluteSpeechSTTEntity(SpeechToTextEntity, GigaChatBaseLLMEntity):
         except Exception as err:  # noqa: BLE001
             _LOGGER.error("GigaChat Audio STT exception: %s", err)
             return ""
-        """Recognize speech using Cloud.ru /v1/realtime WebSocket (`GigaChat/GigaASR`)."""
-        ws_url = "wss://foundation-models.api.cloud.ru/v1/realtime?model=GigaChat/GigaASR"
-        headers = {
-            "Authorization": f"Bearer {self.cloud_ru_api_key}",
-            "OpenAI-Beta": "realtime=v1",
-        }
-        transcript_parts: list[str] = []
-
-        try:
-            async with (
-                aiohttp.ClientSession() as session,
-                session.ws_connect(
-                    ws_url,
-                    headers=headers,
-                    timeout=25.0,
-                ) as ws,
-            ):
-                for offset in range(0, len(pcm_bytes), 32768):
-                    chunk_b64 = base64.b64encode(
-                        pcm_bytes[offset : offset + 32768]
-                    ).decode("ascii")
-                    await ws.send_json(
-                        {"type": "input_audio_buffer.append", "audio": chunk_b64}
-                    )
-                await ws.send_json({"type": "input_audio_buffer.commit"})
-                await ws.send_json(
-                    {
-                        "type": "response.create",
-                        "response": {"modalities": ["text"]},
-                    }
-                )
-
-                async for msg in ws:
-                    if msg.type == aiohttp.WSMsgType.TEXT:
-                        data = json.loads(msg.data)
-                        ev_type = data.get("type", "")
-                        if ev_type == "session.created":
-                            _LOGGER.debug(
-                                "Cloud.ru GigaASR session.created: %s", data
-                            )
-                        elif ev_type in (
-                            "conversation.item.input_audio_transcription.completed",
-                            "response.audio_transcript.done",
-                            "response.text.done",
-                            "response.output_text.done",
-                        ):
-                            t = str(
-                                data.get("transcript") or data.get("text") or ""
-                            ).strip()
-                            if t:
-                                return t
-                        elif ev_type in (
-                            "conversation.item.input_audio_transcription.delta",
-                            "response.audio_transcript.delta",
-                            "response.text.delta",
-                            "response.output_text.delta",
-                        ):
-                            if d := data.get("delta"):
-                                transcript_parts.append(str(d))
-                        elif ev_type == "response.done":
-                            resp_obj = data.get("response", {})
-                            for item in resp_obj.get("output", []):
-                                for c in item.get("content", []):
-                                    if t := c.get("transcript") or c.get("text"):
-                                        return str(t).strip()
-                            break
-                        elif ev_type == "error":
-                            _LOGGER.warning(
-                                "Cloud.ru GigaASR Realtime error: %s", data
-                            )
-                            break
-                    elif msg.type in (
-                        aiohttp.WSMsgType.CLOSED,
-                        aiohttp.WSMsgType.ERROR,
-                    ):
-                        break
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.debug("Cloud.ru GigaASR Realtime exception: %s", err)
-
-        return "".join(transcript_parts).strip()
 

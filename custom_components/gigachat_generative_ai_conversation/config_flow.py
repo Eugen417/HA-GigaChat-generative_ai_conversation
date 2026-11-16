@@ -17,6 +17,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_LLM_HASS_API, CONF_NAME, CONF_PROMPT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import llm
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -287,20 +288,20 @@ class GigaChatAIConfigFlow(ConfigFlow, domain=DOMAIN):
         }
 
 
-async def _async_fetch_cloud_ru_models(api_key: str) -> list[dict[str, Any]]:
+async def _async_fetch_cloud_ru_models(
+    hass: HomeAssistant, api_key: str
+) -> list[dict[str, Any]]:
     """Fetch live model list from Cloud.ru GET /v1/models (listModels)."""
     headers: dict[str, str] = {"Accept": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     try:
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get(
-                f"{CLOUD_RU_BASE_URL}/models",
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=5),
-            ) as resp,
-        ):
+        session = async_get_clientsession(hass)
+        async with session.get(
+            f"{CLOUD_RU_BASE_URL}/models",
+            headers=headers,
+            timeout=aiohttp.ClientTimeout(total=5),
+        ) as resp:
             if resp.status == 200:
                 payload = await resp.json()
                 data = payload.get("data")
@@ -332,7 +333,9 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
         entry_data = self._get_entry().data
         cloud_key = str(entry_data.get(CONF_CLOUD_RU_API_KEY, "")).strip()
         if cloud_key and self._cloud_ru_live_models is None:
-            self._cloud_ru_live_models = await _async_fetch_cloud_ru_models(cloud_key)
+            self._cloud_ru_live_models = await _async_fetch_cloud_ru_models(
+                self.hass, cloud_key
+            )
 
         if user_input is None:
             if self._is_new:
@@ -401,15 +404,11 @@ class GigaChatAISubentryFlowHandler(ConfigSubentryFlow):
                 )
 
             entry = self._get_entry()
-            result = self.async_update_and_abort(
+            return self.async_update_and_abort(
                 entry,
                 self._get_reconfigure_subentry(),
                 data=user_input,
             )
-            self.hass.async_create_task(
-                self.hass.config_entries.async_reload(entry.entry_id)
-            )
-            return result
 
         schema = _gigachat_config_option_schema(
             self.hass,

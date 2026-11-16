@@ -9,12 +9,22 @@ from typing import Any
 import uuid
 
 import aiohttp
-import probatio
+
+try:
+    import probatio
+except ImportError:
+    probatio = None  # type: ignore[assignment]
+
+try:
+    import voluptuous_openapi
+except ImportError:
+    voluptuous_openapi = None  # type: ignore[assignment]
 
 from homeassistant.components import conversation
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr, llm
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.json import json_dumps
@@ -182,6 +192,19 @@ def _normalize_gigachat_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
     return schema
 
 
+def _schema_to_openapi(
+    parameters: Any, custom_serializer: Callable[[Any], Any] | None
+) -> dict[str, Any]:
+    """Convert voluptuous/probatio schema to OpenAPI dict across HA 2025.7+ and 2026.9+."""
+    if probatio is not None:
+        return probatio.to_openapi(parameters, custom_serializer=custom_serializer)
+    if voluptuous_openapi is not None:
+        return voluptuous_openapi.convert(
+            parameters, custom_serializer=custom_serializer
+        )
+    return {"type": "object", "properties": {}}
+
+
 def _format_tool(
     tool: llm.Tool,
     custom_serializer: Callable[[Any], Any] | None,
@@ -189,11 +212,9 @@ def _format_tool(
 ) -> dict[str, Any]:
     """Format tool specification for GigaChat API (`functions` array)."""
     schema: dict[str, Any] = {"type": "object", "properties": {}}
-    if probatio is not None:
+    if probatio is not None or voluptuous_openapi is not None:
         try:
-            schema = probatio.to_openapi(
-                tool.parameters, custom_serializer=custom_serializer
-            )
+            schema = _schema_to_openapi(tool.parameters, custom_serializer)
             if not isinstance(schema, dict):
                 schema = {"type": "object", "properties": {}}
             if "type" not in schema or not isinstance(schema["type"], str):
@@ -429,12 +450,12 @@ def _format_structured_output_instruction(
     custom_serializer: Callable[[Any], Any] | None = None,
 ) -> str:
     """Format a voluptuous structure schema into a JSON Schema prompt instruction."""
-    if structure is None or probatio is None:
+    if structure is None or (probatio is None and voluptuous_openapi is None):
         return ""
     try:
-        schema = probatio.to_openapi(
+        schema = _schema_to_openapi(
             structure,
-            custom_serializer=custom_serializer or llm.selector_serializer,
+            custom_serializer or llm.selector_serializer,
         )
         norm_schema = _normalize_gigachat_json_schema(schema)
         return (
@@ -444,6 +465,34 @@ def _format_structured_output_instruction(
     except Exception as err:  # noqa: BLE001
         _LOGGER.debug("Failed to build structure JSON schema: %s", err)
         return ""
+
+
+def _compact_sber_messages(
+    messages: list[dict[str, Any]], max_chars: int = 9000
+) -> list[dict[str, Any]]:
+    """Compact oversized messages so GigaChat does not fail with HTTP 413."""
+    compacted: list[dict[str, Any]] = []
+    for msg in messages:
+        content = msg.get("content")
+        if isinstance(content, str) and len(content) > max_chars:
+            role = msg.get("role")
+            if role == "system" and _SMART_HOME_SYSTEM_ADDON in content:
+                base_part, _, addon_part = content.partition(_SMART_HOME_SYSTEM_ADDON)
+                keep_base = max(2000, max_chars - len(_SMART_HOME_SYSTEM_ADDON) - 80)
+                trimmed = (
+                    f"{base_part[:keep_base]}\n...[список сокращён]..."
+                    f"{_SMART_HOME_SYSTEM_ADDON}{addon_part[:200]}"
+                )
+            elif role == "function":
+                trimmed = (
+                    f"{content[: max_chars - 120]}... [данные сокращены из-за лимита токенов]"
+                )
+            else:
+                trimmed = f"{content[: max_chars - 60]}..."
+            compacted.append({**msg, "content": trimmed})
+        else:
+            compacted.append(msg)
+    return compacted
 
 
 def _estimate_gigachat_cost_rub(
@@ -566,6 +615,11 @@ class GigaChatBaseLLMEntity(Entity):
         """Return the latest subentry from the config entry."""
         return self.entry.subentries.get(self._subentry_id, self._subentry)
 
+    def _get_http_session(self, *, use_sber_ssl: bool = False) -> aiohttp.ClientSession:
+        """Return the shared Home Assistant aiohttp ClientSession."""
+        verify = self.verify_ssl if use_sber_ssl else True
+        return async_get_clientsession(self.hass, verify_ssl=verify)
+
     @property
     def model(self) -> str:
         """Return the currently configured model for this subentry."""
@@ -612,16 +666,14 @@ class GigaChatBaseLLMEntity(Entity):
         data = {"scope": scope}
 
         try:
-            async with (
-                aiohttp.ClientSession() as session,
-                session.post(
-                    OAUTH_URL,
-                    headers=headers,
-                    data=data,
-                    ssl=self.verify_ssl,
-                    timeout=aiohttp.ClientTimeout(total=20),
-                ) as resp,
-            ):
+            session = self._get_http_session(use_sber_ssl=True)
+            async with session.post(
+                OAUTH_URL,
+                headers=headers,
+                data=data,
+                ssl=self.verify_ssl,
+                timeout=aiohttp.ClientTimeout(total=20),
+            ) as resp:
                 if resp.status != 200:
                     err_text = await resp.text()
                     _LOGGER.error(
@@ -676,18 +728,16 @@ class GigaChatBaseLLMEntity(Entity):
                 return dict(balance_store["data"])
 
         try:
-            async with (
-                aiohttp.ClientSession() as session,
-                session.get(
-                    f"{GIGACHAT_BASE_URL}/balance",
-                    headers={
-                        "Authorization": f"Bearer {token}",
-                        "Accept": "application/json",
-                    },
-                    ssl=self.verify_ssl,
-                    timeout=aiohttp.ClientTimeout(total=10),
-                ) as resp,
-            ):
+            session = self._get_http_session(use_sber_ssl=True)
+            async with session.get(
+                f"{GIGACHAT_BASE_URL}/balance",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json",
+                },
+                ssl=self.verify_ssl,
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as resp:
                 if resp.status == 200:
                     payload = await resp.json()
                     items = payload.get("balance") or []
@@ -754,7 +804,8 @@ class GigaChatBaseLLMEntity(Entity):
             used_model = cloud_model
 
             try:
-                async with aiohttp.ClientSession() as session:
+                session = self._get_http_session(use_sber_ssl=False)
+                if True:
                     for candidate in candidates:
                         payload: dict[str, Any] = {
                             "model": candidate,
@@ -1013,17 +1064,40 @@ class GigaChatBaseLLMEntity(Entity):
             else:
                 candidate_models = raw_candidates
 
+            max_msg_chars = max(
+                (len(str(m.get("content") or "")) for m in messages),
+                default=0,
+            )
+            if max_msg_chars > 8000:
+                gen2_plus = [
+                    c
+                    for c in candidate_models
+                    if c not in ("GigaChat", "GigaChat-Pro", "GigaChat-Max")
+                ]
+                legacy_gen1 = [
+                    c
+                    for c in candidate_models
+                    if c in ("GigaChat", "GigaChat-Pro", "GigaChat-Max")
+                ]
+                candidate_models = gen2_plus + legacy_gen1
+
             res_data: dict[str, Any] | None = None
             last_status = 0
             last_err = ""
             used_model = model_name
 
             try:
-                async with aiohttp.ClientSession() as session:
+                session = self._get_http_session(use_sber_ssl=True)
+                for attempt_compact in (False, True):
+                    req_messages = (
+                        _compact_sber_messages(messages, max_chars=9000)
+                        if attempt_compact
+                        else messages
+                    )
                     for candidate in candidate_models:
                         payload: dict[str, Any] = {
                             "model": candidate,
-                            "messages": messages,
+                            "messages": req_messages,
                             "temperature": temperature,
                             "max_tokens": max_tokens,
                             "stream": False,
@@ -1082,16 +1156,21 @@ class GigaChatBaseLLMEntity(Entity):
 
                         if res_data is not None:
                             break
-                        if last_status not in (402, 404, 422):
+                        if last_status not in (402, 404, 413, 422):
                             break
 
-                    if res_data is None:
-                        _LOGGER.error(
-                            "GigaChat API error %s: %s", last_status, last_err
-                        )
-                        raise HomeAssistantError(
-                            f"Ошибка API GigaChat ({last_status}): {last_err}"
-                        )
+                    if res_data is not None or last_status not in (402, 413):
+                        break
+                    if not attempt_compact and max_msg_chars <= 9000 and last_status != 413:
+                        break
+
+                if res_data is None:
+                    _LOGGER.error(
+                        "GigaChat API error %s: %s", last_status, last_err
+                    )
+                    raise HomeAssistantError(
+                        f"Ошибка API GigaChat ({last_status}): {last_err}"
+                    )
 
                     choices = res_data.get("choices", [])
                     if not choices:

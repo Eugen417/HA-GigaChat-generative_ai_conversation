@@ -376,7 +376,8 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
 
         last_status = 0
         last_err = ""
-        async with aiohttp.ClientSession() as session:
+        session = self._get_http_session(use_sber_ssl=False)
+        if True:
             for candidate in cloud_vision_candidates:
                 payload = {
                     "model": candidate,
@@ -447,7 +448,8 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
         uploaded_file_ids: list[str] = []
 
         try:
-            async with aiohttp.ClientSession() as session:
+            session = self._get_http_session(use_sber_ssl=True)
+            if True:
                 for img_bytes, mime_type, filename in prepared_images:
                     form = aiohttp.FormData()
                     form.add_field(
@@ -615,7 +617,8 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
                 }
             )
 
-        async with aiohttp.ClientSession() as session:
+        session = self._get_http_session(use_sber_ssl=False)
+        if True:
             async with session.post(
                 f"{CLOUD_RU_BASE_URL}/chat/completions",
                 headers={
@@ -666,7 +669,8 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
             )
 
         try:
-            async with aiohttp.ClientSession() as session:
+            session = self._get_http_session(use_sber_ssl=False)
+            if True:
                 for llm_model in (
                     "GigaChat/GigaChat-3-Pro",
                     "ai-sage/GigaChat3-10B-A1.8B",
@@ -739,7 +743,8 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
                     ) from err
 
         if self.cloud_ru_api_key:
-            async with aiohttp.ClientSession() as session:
+            session = self._get_http_session(use_sber_ssl=False)
+            if True:
                 for stt_model in ("GigaChat/GigaASR", "openai/whisper-large-v3"):
                     form = aiohttp.FormData()
                     form.add_field(
@@ -814,7 +819,8 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
     ) -> str:
         """Upload binary file (audio/PDF/DOCX/TXT) to Sber Studio /files and analyze with GigaChat."""
         token = await self.async_get_access_token(is_speech=False)
-        async with aiohttp.ClientSession() as session:
+        session = self._get_http_session(use_sber_ssl=True)
+        if True:
             form = aiohttp.FormData()
             form.add_field(
                 "file",
@@ -936,7 +942,8 @@ class GigaChatAITaskEntity(ai_task.AITaskEntity, GigaChatBaseLLMEntity):
                 candidates.append(fallback)
 
         try:
-            async with aiohttp.ClientSession() as session:
+            session = self._get_http_session(use_sber_ssl=True)
+            if True:
                 res_data = None
                 used_model = image_model
                 last_status = 0

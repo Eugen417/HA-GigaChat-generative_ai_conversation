@@ -1,7 +1,7 @@
 {
   "domain": "gigachat_generative_ai_conversation",
   "name": "Sber GigaChat AI",
-  "after_dependencies": ["assist_pipeline", "intent"],
+  "after_dependencies": ["assist_pipeline", "ffmpeg", "intent"],
   "codeowners": ["@Eugen417"],
   "config_flow": true,
   "dependencies": ["conversation"],
@@ -10,6 +10,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Eugen417/HA-GigaChat-generative_ai_conversation/issues",
   "requirements": [],
-  "version": "1.2.14"
+  "version": "1.2.15"
 }
 

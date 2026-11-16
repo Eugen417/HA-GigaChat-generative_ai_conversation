@@ -205,6 +205,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     device_registry = dr.async_get(hass)
+    entry_devices = dr.async_entries_for_config_entry(
+        device_registry, entry.entry_id
+    )
     for sub in entry.subentries.values():
         rec_model = get_recommended_model(entry.data, sub.subentry_type)
         if sub.subentry_type in ("conversation", "ai_task_data", "ai_task_image"):
@@ -221,15 +224,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         else:
             disp_model = rec_model
 
-        if dev := device_registry.async_get_device(
-            identifiers={(DOMAIN, sub.subentry_id)}
-        ):
-            if dev.model != disp_model or dev.name != sub.title:
-                device_registry.async_update_device(
-                    dev.id,
-                    name=sub.title,
-                    model=disp_model,
-                )
+        dev = next(
+            (
+                d
+                for d in entry_devices
+                if (DOMAIN, sub.subentry_id) in d.identifiers
+            ),
+            None,
+        )
+        if dev is not None and (dev.model != disp_model or dev.name != sub.title):
+            device_registry.async_update_device(
+                dev.id,
+                name=sub.title,
+                model=disp_model,
+            )
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
 

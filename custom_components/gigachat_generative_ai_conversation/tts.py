@@ -160,17 +160,15 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/text",
             }
-            async with (
-                aiohttp.ClientSession() as session,
-                session.post(
-                    SALUTE_SPEECH_TTS_URL,
-                    headers=headers,
-                    params=params,
-                    data=message.encode("utf-8"),
-                    ssl=self.verify_ssl,
-                    timeout=aiohttp.ClientTimeout(total=30),
-                ) as resp,
-            ):
+            session = self._get_http_session(use_sber_ssl=True)
+            async with session.post(
+                SALUTE_SPEECH_TTS_URL,
+                headers=headers,
+                params=params,
+                data=message.encode("utf-8"),
+                ssl=self.verify_ssl,
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as resp:
                 if resp.status == 200:
                     audio = await resp.read()
                     if self.hass is not None:
@@ -219,14 +217,12 @@ class SaluteSpeechTTSEntity(TextToSpeechEntity, GigaChatBaseLLMEntity):
             audio_chunks: list[bytes] = []
             had_voice_error = False
             try:
-                async with (
-                    aiohttp.ClientSession() as session,
-                    session.ws_connect(
-                        ws_url,
-                        headers=headers,
-                        timeout=30.0,
-                    ) as ws,
-                ):
+                session = self._get_http_session(use_sber_ssl=False)
+                async with session.ws_connect(
+                    ws_url,
+                    headers=headers,
+                    timeout=30.0,
+                ) as ws:
                     await ws.send_json(
                         {
                             "type": "response.create",
