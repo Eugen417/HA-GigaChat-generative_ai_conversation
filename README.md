@@ -73,7 +73,7 @@
 👉 **[Пошаговая инструкция по получению ключей в Cloud.ru и Sber Studio (API_KEY_GUIDE.md)](API_KEY_GUIDE.md)**
 
 <p align="center">
-  <img width="800" alt="Каталог моделей GigaChat 3 и SaluteSpeech в Cloud.ru Foundation Models" src="images/cloud_ru_catalog.png" />
+  <img width="460" alt="Окно подключения Sber GigaChat AI и разбор всех 3 полей ключей в Home Assistant" src="images/ha_setup_keys.png" />
 </p>
 
 В окне настройки интеграции (**Настройки -> Устройства и службы -> Добавить интеграцию -> Sber GigaChat AI**) предусмотрено **3 поля для ключей**. Для полноценной работы всех 5 служб рекомендуется заполнить **Поле 1 (`Cloud.ru`) + Поле 2 (`Sber Studio`)**:

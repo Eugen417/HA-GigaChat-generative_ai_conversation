@@ -4,6 +4,7 @@
 
 ### Логотип и интерфейс Home Assistant (`README.md`):
 - `logo.png` — фирменный логотип интеграции **Sber GigaChat AI**
+- `ha_setup_keys.png` — окно подключения **Sber GigaChat AI** с разбором всех 3 полей ключей (`Cloud.ru`, `Sber Studio`, архивный `SaluteSpeech`)
 - `services_overview.png` — общий вид интеграции **Sber GigaChat AI** в Home Assistant со списком всех 5 дочерних ИИ-служб (`GigaChat AI Task`, `GigaChat AI Task image`, `GigaChat Conversation`, `SaluteSpeech STT`, `SaluteSpeech TTS`) и кнопками добавления служб
 - `device_diagnostics.png` — страница службы `GigaChat Conversation` с диагностическими сенсорами потраченных токенов и затрат в рублях (`₽`)
 - `conversation_settings.png` — окно настроек диалогового агента `GigaChat Conversation` (системный промпт, управление Home Assistant, выбор модели, температура)
