@@ -7,15 +7,17 @@
 
 <p align="center">
   <a href="https://github.com/hacs/integration"><img alt="hacs_badge" src="https://img.shields.io/badge/HACS-Default-41BDF5.svg" /></a>
-  <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
+  <a href="https://github.com/Eugen417/HA-GigaChat-generative_ai_conversation/releases"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/Eugen417/HA-GigaChat-generative_ai_conversation" /></a>
+  <a href="https://github.com/Eugen417/HA-GigaChat-generative_ai_conversation/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Eugen417/HA-GigaChat-generative_ai_conversation/total" /></a>
   <a href="https://www.home-assistant.io/"><img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2025.8%2B%20%7C%202026.x-blue.svg" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
 </p>
 
 <p align="center">
   <b>🇷🇺 Русский</b> | <a href="README.en.md">🇬🇧 English</a>
 </p>
 
-Полнофункциональная интеграция **Sber GigaChat AI (GigaChat 2 / 3 / 3.5, Kandinsky 3.1 и SaluteSpeech)** для **Home Assistant**, построенная по современной сервисной архитектуре `ConfigSubentry` и `ChatLog` (аналогично официальным интеграциям **Google Gemini**, **Ollama** и пользовательской [HA-Yandex-generative_ai_conversation](https://github.com/Eugen417/HA-Yandex-generative_ai_conversation) в Home Assistant 2026).
+Полнофункциональная интеграция **Sber GigaChat AI (GigaChat 2 / 3 / 3.5, Kandinsky 3.1 и SaluteSpeech)** для **Home Assistant**, построенная по современной сервисной архитектуре `ConfigSubentry` и `ChatLog` (аналогично официальным интеграциям **Google Gemini**, **Ollama** и пользовательской [HA-Yandex-generative_ai_conversation](https://github.com/Eugen417/HA-Yandex-generative_ai_conversation)). Совместима с **Home Assistant 2025.8+ и 2026.x**.
 
 Интеграция поддерживает **гибридную работу сразу с двумя платформами Сбера** — **[Cloud.ru Evolution Foundation Models](https://cloud.ru/products/evolution-ai-factory/catalog-foundation-models)** и **[Sber Studio (`developers.sber.ru/studio`)](https://developers.sber.ru/studio)** — и объединяет в одном подключении **5 независимых ИИ-служб** для голосового ассистента **Assist** и автоматизаций умного дома:
 
@@ -52,18 +54,12 @@
 
 ## 📦 Установка
 
-### Вариант 1: Через HACS (Рекомендуется)
+### Вариант 1: Через HACS / Marketplace (Рекомендуется)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Eugen417&repository=HA-GigaChat-generative_ai_conversation&category=integration)
 
-1. Откройте **HACS** в вашем Home Assistant.
-2. Перейдите в раздел **Интеграции** -> нажмите на меню `⋮` в правом верхнем углу -> **Пользовательские репозитории (Custom repositories)**.
-3. В поле **Репозиторий** укажите:
-   ```text
-   https://github.com/Eugen417/HA-GigaChat-generative_ai_conversation
-   ```
-4. В поле **Тип (Category)** выберите **Интеграция (Integration)** и нажмите **Добавить**.
-5. Найдите **Sber GigaChat AI** в списке, нажмите **Скачать** и **перезагрузите Home Assistant**.
+1. Нажмите кнопку выше или откройте **HACS / Marketplace** в вашем Home Assistant.
+2. Найдите в поиске **Sber GigaChat AI**, нажмите **Скачать** и **перезагрузите Home Assistant**.
 
 ### Вариант 2: Ручная установка
 1. Скачайте архив репозитория и скопируйте папку `custom_components/gigachat_generative_ai_conversation` в директорию `/config/custom_components/` вашего Home Assistant.

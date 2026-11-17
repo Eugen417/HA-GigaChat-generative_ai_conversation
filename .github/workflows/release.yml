@@ -15,8 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Package gigachat_generative_ai_conversation.zip
+        run: |
+          cd custom_components/gigachat_generative_ai_conversation
+          zip -r "${GITHUB_WORKSPACE}/gigachat_generative_ai_conversation.zip" . -x "*/__pycache__/*" "*.pyc" "*.DS_Store"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          files: gigachat_generative_ai_conversation.zip
           generate_release_notes: true
 

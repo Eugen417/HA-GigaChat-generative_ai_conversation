@@ -1,6 +1,9 @@
 {
   "name": "Sber GigaChat AI",
   "homeassistant": "2025.8.0",
-  "hacs": "2.0.0"
+  "hacs": "2.0.0",
+  "zip_release": true,
+  "filename": "gigachat_generative_ai_conversation.zip"
 }
+
 
